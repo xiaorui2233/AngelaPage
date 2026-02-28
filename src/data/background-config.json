@@ -2,9 +2,9 @@
   "enabled": true,
   "type": "image",
   "image": {
-    "url": "",
-    "opacity": 1,
-    "size": "cover",
+    "url": "https://images.alphacoders.com/114/thumb-1920-1145870.png",
+    "opacity": 0.1,
+    "size": "contain",
     "position": "center",
     "repeat": "no-repeat"
   },
@@ -21,7 +21,7 @@
     },
     "zoom": {
       "enabled": true,
-      "sensitivity": 1.0
+      "sensitivity": 1
     },
     "pan": {
       "enabled": true,
