@@ -26,6 +26,9 @@ const config = backgroundConfig;
     </script>
   </head>
   <body>
+    <!-- 鼠标跟随圆圈 -->
+    <div class="cursor-follower" id="cursor-follower"></div>
+    
     {config.enabled && (
     <div class="background" id="background">
       {config.type === 'image' && config.image?.url && (
@@ -37,9 +40,6 @@ const config = backgroundConfig;
           <div class="gradient gradient-2"></div>
           <div class="gradient gradient-3"></div>
         </>
-      )}
-      {config.focusEffect?.enabled && (
-        <div class="focus-overlay" id="focus-overlay"></div>
       )}
     </div>
     )}
@@ -68,6 +68,42 @@ const config = backgroundConfig;
 
     <script>
       (function() {
+        // 鼠标跟随圆圈
+        const cursor = document.getElementById('cursor-follower');
+        let mouseX = 0, mouseY = 0;
+        let cursorX = 0, cursorY = 0;
+        
+        document.addEventListener('mousemove', (e) => {
+          mouseX = e.clientX;
+          mouseY = e.clientY;
+        });
+
+        // 鼠标跟随动画
+        function animateCursor() {
+          cursorX += (mouseX - cursorX) * 0.15;
+          cursorY += (mouseY - cursorY) * 0.15;
+          cursor.style.left = cursorX + 'px';
+          cursor.style.top = cursorY + 'px';
+          requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        // 可交互元素检测
+        const interactiveSelectors = 'a, button, input, textarea, select, [role="button"], .clickable, .nav-links a, .btn';
+        
+        document.addEventListener('mouseover', (e) => {
+          if (e.target.closest(interactiveSelectors)) {
+            cursor.classList.add('hovering');
+          }
+        });
+
+        document.addEventListener('mouseout', (e) => {
+          if (e.target.closest(interactiveSelectors)) {
+            cursor.classList.remove('hovering');
+          }
+        });
+
+        // 背景配置
         const config = window.__bgConfig;
         if (!config || !config.enabled) return;
 
@@ -111,71 +147,6 @@ const config = backgroundConfig;
         
         const panEnabled = config.mouseInteraction?.pan?.enabled;
         const panStrength = panEnabled ? (config.mouseInteraction.pan.strength || 0.3) : 0;
-
-        // 焦点效果
-        const focusConfig = config.focusEffect;
-        const focusEnabled = focusConfig?.enabled;
-        const focusType = focusConfig?.type || 'mouse';
-        const focusRadius = focusConfig?.radius || 200;
-        const focusBlur = focusConfig?.blur || 20;
-        const focusOpacity = focusConfig?.opacity || 0.3;
-
-        const focusOverlay = document.getElementById('focus-overlay');
-        
-        // 初始化焦点遮罩层
-        if (focusEnabled && focusOverlay) {
-          focusOverlay.style.position = 'absolute';
-          focusOverlay.style.top = '0';
-          focusOverlay.style.left = '0';
-          focusOverlay.style.width = '100%';
-          focusOverlay.style.height = '100%';
-          focusOverlay.style.pointerEvents = 'none';
-          focusOverlay.style.zIndex = '10';
-          focusOverlay.style.transition = 'opacity 0.3s ease';
-          
-          // 创建径向渐变遮罩
-          const updateFocusPosition = (x, y) => {
-            if (!focusOverlay) return;
-            focusOverlay.style.background = `
-              radial-gradient(
-                circle ${focusRadius}px at ${x}px ${y}px,
-                rgba(0, 0, 0, 0) 0%,
-                rgba(0, 0, 0, ${focusOpacity}) 30%,
-                rgba(0, 0, 0, ${focusOpacity * 1.5}) 60%,
-                rgba(0, 0, 0, ${focusOpacity * 2}) 100%
-              )
-            `;
-          };
-
-          // 鼠标模式 - 跟随鼠标
-          if (focusType === 'mouse') {
-            document.addEventListener('mousemove', (e) => {
-              updateFocusPosition(e.clientX, e.clientY);
-            });
-          }
-          
-          // 点击模式 - 点击时聚焦
-          if (focusType === 'click') {
-            let focusedElement = null;
-            document.addEventListener('click', (e) => {
-              // 移除之前的焦点样式
-              if (focusedElement) {
-                focusedElement.style.position = '';
-                focusedElement.style.zIndex = '';
-                focusedElement.style.transform = '';
-              }
-              
-              // 应用新焦点
-              focusedElement = e.target;
-              if (focusedElement && focusedElement !== document.body) {
-                const rect = focusedElement.getBoundingClientRect();
-                const centerX = rect.left + rect.width / 2;
-                const centerY = rect.top + rect.height / 2;
-                updateFocusPosition(centerX, centerY);
-              }
-            });
-          }
-        }
 
         document.addEventListener('mousemove', (e) => {
           targetX = (e.clientX - centerX) / centerX;
@@ -289,6 +260,35 @@ const config = backgroundConfig;
     border-radius: 50%;
     transform: translate(-50%, -50%);
     will-change: transform;
+  }
+
+  /* 鼠标跟随圆圈 */
+  .cursor-follower {
+    position: fixed;
+    width: 40px;
+    height: 40px;
+    border: 2px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+    mix-blend-mode: difference;
+  }
+
+  .cursor-follower.hovering {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  /* 可交互元素的反色效果 */
+  a, button, input, textarea, select, [role="button"], .clickable {
+    cursor: none;
+  }
+
+  a:hover, button:hover, [role="button"]:hover, .clickable:hover {
+    filter: invert(1);
   }
 
   @keyframes float {
