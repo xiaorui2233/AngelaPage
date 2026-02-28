@@ -31,10 +31,10 @@
   "cursorFollower": {
     "enabled": true,
     "size": 42,
-    "hoverSize": 150,
+    "hoverSize": 75,
     "borderColor": "#4b98d2",
     "fillColor": "rgba(0, 255, 170, 0.1)",
     "blendMode": "difference",
-    "followSpeed": 0.11
+    "followSpeed": 0.09
   }
 }
