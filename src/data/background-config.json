@@ -29,7 +29,7 @@
     }
   },
   "focusEffect": {
-    "enabled": true,
+    "enabled": false,
     "type": "click",
     "radius": 200,
     "blur": 20,
