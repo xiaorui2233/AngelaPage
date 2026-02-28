@@ -27,5 +27,12 @@
       "enabled": true,
       "strength": 0.3
     }
+  },
+  "focusEffect": {
+    "enabled": true,
+    "type": "mouse",
+    "radius": 200,
+    "blur": 20,
+    "opacity": 0.3
   }
 }
