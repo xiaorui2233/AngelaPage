@@ -3,7 +3,7 @@
   "type": "image",
   "image": {
     "url": "https://images.alphacoders.com/114/thumb-1920-1145870.png",
-    "opacity": 0.1,
+    "opacity": 0.2,
     "size": "cover",
     "position": "center",
     "repeat": "no-repeat"
@@ -17,11 +17,11 @@
   "mouseInteraction": {
     "parallax": {
       "enabled": true,
-      "strength": 0.3
+      "strength": 0.5
     },
     "zoom": {
       "enabled": true,
-      "sensitivity": 1
+      "sensitivity": 0.6
     },
     "pan": {
       "enabled": true,
@@ -30,9 +30,9 @@
   },
   "focusEffect": {
     "enabled": true,
-    "type": "mouse",
+    "type": "click",
     "radius": 200,
     "blur": 20,
-    "opacity": 0.3
+    "opacity": 0.1
   }
 }
