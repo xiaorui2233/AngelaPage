@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Angela 博客发布工具</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans SC', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; padding: 20px; color: #fff; }
+    .container { max-width: 800px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 2rem; }
+    .card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; padding: 30px; margin-bottom: 20px; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; margin-bottom: 8px; font-weight: 500; }
+    input, textarea, select { width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #fff; font-size: 14px; font-family: inherit; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: #667eea; }
+    textarea { min-height: 200px; resize: vertical; }
+    .btn { padding: 14px 30px; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-right: 10px; margin-bottom: 10px; }
+    .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); color: #fff; }
+    .btn-danger { background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.5); color: #f44336; }
+    .status { padding: 15px; border-radius: 10px; margin-top: 20px; display: none; }
+    .status.success { background: rgba(76, 175, 80, 0.2); border: 1px solid rgba(76, 175, 80, 0.5); color: #4caf50; }
+    .status.error { background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.5); color: #f44336; }
+    .status.info { background: rgba(33, 150, 243, 0.2); border: 1px solid rgba(33, 150, 243, 0.5); color: #2196f3; }
+    .tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); }
+    .tab { padding: 12px 24px; cursor: pointer; border-bottom: 2px solid transparent; color: rgba(255, 255, 255, 0.7); }
+    .tab.active { border-bottom-color: #667eea; color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .file-list { display: grid; gap: 10px; }
+    .file-item { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .file-item:hover { background: rgba(255, 255, 255, 0.1); }
+    .file-item.selected { background: rgba(102, 126, 234, 0.3); border: 1px solid #667eea; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Angela 博客发布工具</h1>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="new-post">发布新文章</div>
+      <div class="tab" data-tab="edit-file">修改页面</div>
+      <div class="tab" data-tab="manage">文章管理</div>
+    </div>
+
+    <div class="tab-content active" id="new-post">
+      <div class="card">
+        <div class="form-group">
+          <label>文章标题</label>
+          <input type="text" id="title" placeholder="输入文章标题">
+        </div>
+        <div class="form-group">
+          <label>文章描述</label>
+          <input type="text" id="description" placeholder="输入文章简介">
+        </div>
+        <div class="form-group">
+          <label>分类</label>
+          <select id="category">
+            <option value="随笔">随笔</option>
+            <option value="技术">技术</option>
+            <option value="生活">生活</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>标签（用逗号分隔）</label>
+          <input type="text" id="tags" placeholder="如: JavaScript, 教程">
+        </div>
+        <div class="form-group">
+          <label>文章内容（Markdown）</label>
+          <textarea id="content" placeholder="在这里写文章内容..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>提交信息</label>
+          <input type="text" id="commit-msg" placeholder="如: 新增文章 xxx">
+        </div>
+        <button class="btn btn-primary" onclick="publishPost()">发布文章</button>
+        <div id="publish-status" class="status"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="edit-file">
+      <div class="card">
+        <div class="form-group">
+          <label>选择要修改的页面</label>
+          <select id="page-select" onchange="loadPageContent()">
+            <option value="">-- 选择页面 --</option>
+            <option value="src/pages/about.astro">关于页</option>
+            <option value="src/pages/friends.astro">友链页</option>
+            <option value="src/pages/index.astro">首页</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>文件内容</label>
+          <textarea id="file-content" style="min-height: 400px;"></textarea>
+        </div>
+        <div class="form-group">
+          <label>提交信息</label>
+          <input type="text" id="edit-commit-msg" placeholder="如: 更新关于页">
+        </div>
+        <button class="btn btn-primary" onclick="saveAndPublish()">保存并发布</button>
+        <div id="edit-status" class="status"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="manage">
+      <div class="card">
+        <h3 style="margin-bottom: 15px;">现有文章</h3>
+        <div id="article-list" class="file-list">
+          <p style="color: rgba(255,255,255,0.5);">点击下方按钮加载文章列表</p>
+        </div>
+        <br>
+        <button class="btn btn-secondary" onclick="loadArticles()">刷新文章列表</button>
+      </div>
+      <div class="card" id="article-edit-card" style="display: none;">
+        <h3 style="margin-bottom: 15px;">编辑文章</h3>
+        <div class="form-group">
+          <label>文件名</label>
+          <input type="text" id="edit-article-filename" readonly>
+        </div>
+        <div class="form-group">
+          <label>文章内容</label>
+          <textarea id="edit-article-content" style="min-height: 300px;"></textarea>
+        </div>
+        <div class="form-group">
+          <label>提交信息</label>
+          <input type="text" id="edit-article-commit" placeholder="如: 更新文章 xxx">
+        </div>
+        <button class="btn btn-primary" onclick="updateArticle()">保存并更新</button>
+        <button class="btn btn-danger" onclick="deleteArticle()">删除文章</button>
+        <div id="article-status" class="status"></div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px; color: rgba(255,255,255,0.5); font-size: 12px;">
+      <p>发布后请等待 1-2 分钟让 GitHub Actions 完成部署</p>
+      <p>博客地址: <a href="https://xiaorui2233.github.io/AngelaPage/" target="_blank" style="color: #667eea;">https://xiaorui2233.github.io/AngelaPage/</a></p>
+    </div>
+  </div>
+
+  <script>
+    // 从 prompt 获取 Token
+    let GITHUB_TOKEN = localStorage.getItem('github_token') || '';
+    if (!GITHUB_TOKEN) {
+      GITHUB_TOKEN = prompt('请输入 GitHub Token:');
+      if (GITHUB_TOKEN) localStorage.setItem('github_token', GITHUB_TOKEN);
+    }
+    const REPO_OWNER = 'xiaorui2233';
+    const REPO_NAME = 'AngelaPage';
+    const API_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    function showStatus(id, msg, type) {
+      const el = document.getElementById(id);
+      el.className = `status ${type}`;
+      el.style.display = 'block';
+      el.textContent = msg;
+    }
+
+    function slugify(text) {
+      return text.toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+
+    async function publishPost() {
+      const title = document.getElementById('title').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const category = document.getElementById('category').value;
+      const tags = document.getElementById('tags').value.trim();
+      const content = document.getElementById('content').value;
+      const commitMsg = document.getElementById('commit-msg').value.trim();
+
+      if (!title || !content) { showStatus('publish-status', '请填写标题和内容', 'error'); return; }
+
+      const slug = slugify(title);
+      const date = new Date().toISOString().split('T')[0];
+      const tagsArray = tags ? tags.split(',').map(t => t.trim()) : [];
+      
+      const frontmatter = `---
+title: "${title}"
+description: "${description}"
+pubDate: ${date}
+tags: [${tagsArray.map(t => `"${t}"`).join(', ')}]
+category: "${category}"
+---
+
+${content}`;
+
+      showStatus('publish-status', '正在发布...', 'info');
+
+      try {
+        const refResponse = await fetch(`${API_BASE}/git/ref/heads/main`, { headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+        const refData = await refResponse.json();
+        const commitSha = refData.object.sha;
+
+        const treeResponse = await fetch(`${API_BASE}/git/trees/${commitSha}?recursive=1`, { headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+        const treeData = await treeResponse.json();
+
+        const blobResponse = await fetch(`${API_BASE}/git/blobs`, {
+          method: 'POST',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: btoa(unescape(encodeURIComponent(frontmatter))), encoding: 'utf-8' })
+        });
+        const blobData = await blobResponse.json();
+
+        const newTree = [...treeData.tree, { path: `src/content/posts/${slug}.md`, mode: '100644', type: 'blob', sha: blobData.sha }];
+
+        const createTreeResponse = await fetch(`${API_BASE}/git/trees`, {
+          method: 'POST',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base_tree: commitSha, tree: newTree })
+        });
+        const newTreeData = await createTreeResponse.json();
+
+        const commitResponse = await fetch(`${API_BASE}/git/commits`, {
+          method: 'POST',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: commitMsg || `新增文章: ${title}`, tree: newTreeData.sha, parents: [commitSha] })
+        });
+        const commitData = await commitResponse.json();
+
+        await fetch(`${API_BASE}/git/refs/heads/main`, {
+          method: 'PATCH',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sha: commitData.sha })
+        });
+
+        showStatus('publish-status', `文章 "${title}" 发布成功！等待 1-2 分钟部署...`, 'success');
+        document.getElementById('title').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('tags').value = '';
+        document.getElementById('content').value = '';
+      } catch (error) {
+        showStatus('publish-status', '发布失败: ' + error.message, 'error');
+      }
+    }
+
+    let currentFiles = {};
+
+    async function loadPageContent() {
+      const filePath = document.getElementById('page-select').value;
+      if (!filePath) return;
+      showStatus('edit-status', '正在加载...', 'info');
+      try {
+        const response = await fetch(`${API_BASE}/contents/${filePath}`, { headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+        const data = await response.json();
+        const content = decodeURIComponent(escape(atob(data.content)));
+        currentFiles[filePath] = { sha: data.sha, content: content };
+        document.getElementById('file-content').value = content;
+        showStatus('edit-status', '加载成功', 'success');
+      } catch (error) {
+        showStatus('edit-status', '加载失败: ' + error.message, 'error');
+      }
+    }
+
+    async function saveAndPublish() {
+      const filePath = document.getElementById('page-select').value;
+      const content = document.getElementById('file-content').value;
+      const commitMsg = document.getElementById('edit-commit-msg').value.trim();
+      if (!filePath || !content || !currentFiles[filePath]) { showStatus('edit-status', '请选择文件并填写内容', 'error'); return; }
+      showStatus('edit-status', '正在保存...', 'info');
+      try {
+        await fetch(`${API_BASE}/contents/${filePath}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: commitMsg || `更新文件: ${filePath}`, content: btoa(unescape(encodeURIComponent(content))), sha: currentFiles[filePath].sha })
+        });
+        showStatus('edit-status', '保存成功！等待部署...', 'success');
+      } catch (error) {
+        showStatus('edit-status', '保存失败: ' + error.message, 'error');
+      }
+    }
+
+    async function loadArticles() {
+      const listEl = document.getElementById('article-list');
+      listEl.innerHTML = '<p>正在加载...</p>';
+      try {
+        const response = await fetch(`${API_BASE}/contents/src/content/posts`, { headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+        const files = await response.json();
+        const mdFiles = files.filter(f => f.name.endsWith('.md'));
+        if (mdFiles.length === 0) { listEl.innerHTML = '<p>暂无文章</p>'; return; }
+        listEl.innerHTML = mdFiles.map(f => `<div class="file-item" onclick="editArticle('${f.name}')"><span>${f.name.replace('.md', '')}</span><span style="color:rgba(255,255,255,0.5);font-size:12px;">点击编辑</span></div>`).join('');
+      } catch (error) {
+        listEl.innerHTML = `<p style="color:#f44336;">加载失败:${error.message}</p>`;
+      }
+    }
+
+    async function editArticle(filename) {
+      document.getElementById('article-edit-card').style.display = 'block';
+      showStatus('article-status', '正在加载...', 'info');
+      try {
+        const response = await fetch(`${API_BASE}/contents/src/content/posts/${filename}`, { headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } });
+        const data = await response.json();
+        const content = decodeURIComponent(escape(atob(data.content)));
+        document.getElementById('edit-article-filename').value = filename;
+        document.getElementById('edit-article-content').value = content;
+        currentFiles[filename] = { sha: data.sha, content: content };
+        showStatus('article-status', '', 'info');
+        document.getElementById('article-edit-card').scrollIntoView({ behavior: 'smooth' });
+      } catch (error) {
+        showStatus('article-status', '加载失败: ' + error.message, 'error');
+      }
+    }
+
+    async function updateArticle() {
+      const filename = document.getElementById('edit-article-filename').value;
+      const content = document.getElementById('edit-article-content').value;
+      const commitMsg = document.getElementById('edit-article-commit').value.trim();
+      if (!filename || !content || !currentFiles[filename]) { showStatus('article-status', '请填写内容', 'error'); return; }
+      showStatus('article-status', '正在保存...', 'info');
+      try {
+        await fetch(`${API_BASE}/contents/src/content/posts/${filename}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: commitMsg || `更新文章: ${filename}`, content: btoa(unescape(encodeURIComponent(content))), sha: currentFiles[filename].sha })
+        });
+        showStatus('article-status', '更新成功！等待部署...', 'success');
+      } catch (error) {
+        showStatus('article-status', '更新失败: ' + error.message, 'error');
+      }
+    }
+
+    async function deleteArticle() {
+      const filename = document.getElementById('edit-article-filename').value;
+      if (!filename) { showStatus('article-status', '请先选择要删除的文章', 'error'); return; }
+      if (!confirm(`确定要删除文章 "${filename}" 吗？此操作不可恢复！`)) return;
+      if (!currentFiles[filename]) { showStatus('article-status', '请先加载文章', 'error'); return; }
+      showStatus('article-status', '正在删除...', 'info');
+      try {
+        await fetch(`${API_BASE}/contents/src/content/posts/${filename}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `删除文章: ${filename}`, sha: currentFiles[filename].sha })
+        });
+        showStatus('article-status', '删除成功！等待部署...', 'success');
+        document.getElementById('article-edit-card').style.display = 'none';
+        loadArticles();
+      } catch (error) {
+        showStatus('article-status', '删除失败: ' + error.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>
