@@ -31,7 +31,7 @@
   "cursorFollower": {
     "enabled": true,
     "size": 42,
-    "hoverSize": 71,
+    "hoverSize": 150,
     "borderColor": "#4b98d2",
     "fillColor": "rgba(0, 255, 170, 0.1)",
     "blendMode": "difference",
