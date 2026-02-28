@@ -27,7 +27,7 @@ const years = Object.keys(postsByYear).sort((a, b) => Number(b) - Number(a));
         <h2 class="year-title">{year}</h2>
         <div class="posts-list">
           {postsByYear[Number(year)].map((post) => (
-            <a href={`/posts/${post.slug}`} class="archive-item">
+            <a href={`/AngelaPage/posts/${post.slug}`} class="archive-item">
               <time datetime={post.data.pubDate.toISOString()}>
                 {post.data.pubDate.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
               </time>

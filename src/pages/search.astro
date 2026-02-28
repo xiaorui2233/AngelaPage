@@ -65,7 +65,7 @@ const allPosts = posts.map((post) => ({
       }
 
       resultsContainer.innerHTML = results.map(post => `
-        <a href="/posts/${post.slug}" class="result-item">
+        <a href="/AngelaPage/posts/${post.slug}" class="result-item">
           <time>${new Date(post.pubDate).toLocaleDateString('zh-CN')}</time>
           <span class="result-title">${post.title}</span>
           <p class="result-description">${post.description}</p>

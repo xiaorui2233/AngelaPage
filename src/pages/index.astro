@@ -21,7 +21,7 @@ const recentPosts = posts.slice(0, 6);
     <h2 class="section-title">最新文章</h2>
     <div class="posts-grid">
       {recentPosts.map((post) => (
-        <a href={`/posts/${post.slug}`} class="post-card">
+        <a href={`/AngelaPage/posts/${post.slug}`} class="post-card">
           <div class="post-cover">
             {post.data.cover ? (
               <img src={post.data.cover} alt={post.data.title} />
