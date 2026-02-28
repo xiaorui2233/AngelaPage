@@ -165,6 +165,11 @@
   </div>
 
   <script>
+    // UTF-8 安全的 base64 编码函数
+    function utf8ToBase64(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
     // Token 管理
     let GITHUB_TOKEN = localStorage.getItem('github_token') || '';
     if (!GITHUB_TOKEN) {
@@ -474,7 +479,7 @@ ${content}`;
         const blobResponse = await fetch(`${API_BASE}/git/blobs`, {
           method: 'POST',
           headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: btoa(unescape(encodeURIComponent(frontmatter))), encoding: 'utf-8' })
+          body: JSON.stringify({ content: utf8ToBase64(frontmatter), encoding: 'utf-8' })
         });
         const blobData = await blobResponse.json();
 
@@ -552,7 +557,7 @@ ${content}`;
         await fetch(`${API_BASE}/contents/${filePath}`, {
           method: 'PUT',
           headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: commitMsg || `更新文件: ${filePath}`, content: btoa(unescape(encodeURIComponent(content))), sha: currentFiles[filePath].sha })
+          body: JSON.stringify({ message: commitMsg || `更新文件: ${filePath}`, content: utf8ToBase64(content), sha: currentFiles[filePath].sha })
         });
         showStatus('edit-status', '保存成功！等待部署...', 'success');
       } catch (error) {
@@ -616,7 +621,7 @@ ${content}`;
         await fetch(`${API_BASE}/contents/src/content/posts/${filename}`, {
           method: 'PUT',
           headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: commitMsg || `更新文章: ${filename}`, content: btoa(unescape(encodeURIComponent(content))), sha: currentFiles[filename].sha })
+          body: JSON.stringify({ message: commitMsg || `更新文章: ${filename}`, content: utf8ToBase64(content), sha: currentFiles[filename].sha })
         });
         showStatus('article-status', '更新成功！等待部署...', 'success');
       } catch (error) {
