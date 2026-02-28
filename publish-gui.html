@@ -479,7 +479,7 @@ ${content}`;
         const blobResponse = await fetch(`${API_BASE}/git/blobs`, {
           method: 'POST',
           headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: utf8ToBase64(frontmatter), encoding: 'utf-8' })
+          body: JSON.stringify({ content: utf8ToBase64(frontmatter) })
         });
         const blobData = await blobResponse.json();
 
