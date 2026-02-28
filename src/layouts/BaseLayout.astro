@@ -68,8 +68,33 @@ const config = backgroundConfig;
 
     <script>
       (function() {
+        // 读取鼠标跟随配置
+        const config = window.__bgConfig;
+        const cursorConfig = config?.cursorFollower || {
+          enabled: true,
+          size: 40,
+          hoverSize: 60,
+          borderColor: 'rgba(255, 255, 255, 0.8)',
+          fillColor: 'rgba(255, 255, 255, 0.2)',
+          blendMode: 'difference',
+          followSpeed: 0.15
+        };
+
         // 鼠标跟随圆圈
         const cursor = document.getElementById('cursor-follower');
+        
+        // 根据配置设置圆圈样式
+        if (cursor && cursorConfig.enabled) {
+          cursor.style.width = cursorConfig.size + 'px';
+          cursor.style.height = cursorConfig.size + 'px';
+          cursor.style.borderColor = cursorConfig.borderColor;
+          cursor.style.background = 'transparent';
+          cursor.style.mixBlendMode = cursorConfig.blendMode || 'difference';
+          cursor.style.display = 'block';
+        } else if (cursor) {
+          cursor.style.display = 'none';
+        }
+
         let mouseX = 0, mouseY = 0;
         let cursorX = 0, cursorY = 0;
         
@@ -80,10 +105,13 @@ const config = backgroundConfig;
 
         // 鼠标跟随动画
         function animateCursor() {
-          cursorX += (mouseX - cursorX) * 0.15;
-          cursorY += (mouseY - cursorY) * 0.15;
-          cursor.style.left = cursorX + 'px';
-          cursor.style.top = cursorY + 'px';
+          if (cursorConfig.enabled) {
+            const speed = cursorConfig.followSpeed || 0.15;
+            cursorX += (mouseX - cursorX) * speed;
+            cursorY += (mouseY - cursorY) * speed;
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+          }
           requestAnimationFrame(animateCursor);
         }
         animateCursor();
@@ -92,19 +120,24 @@ const config = backgroundConfig;
         const interactiveSelectors = 'a, button, input, textarea, select, [role="button"], .clickable, .nav-links a, .btn';
         
         document.addEventListener('mouseover', (e) => {
-          if (e.target.closest(interactiveSelectors)) {
+          if (cursorConfig.enabled && e.target.closest(interactiveSelectors)) {
             cursor.classList.add('hovering');
+            cursor.style.width = (cursorConfig.hoverSize || 60) + 'px';
+            cursor.style.height = (cursorConfig.hoverSize || 60) + 'px';
+            cursor.style.background = cursorConfig.fillColor || 'rgba(255, 255, 255, 0.2)';
           }
         });
 
         document.addEventListener('mouseout', (e) => {
-          if (e.target.closest(interactiveSelectors)) {
+          if (cursorConfig.enabled && e.target.closest(interactiveSelectors)) {
             cursor.classList.remove('hovering');
+            cursor.style.width = cursorConfig.size + 'px';
+            cursor.style.height = cursorConfig.size + 'px';
+            cursor.style.background = 'transparent';
           }
         });
 
         // 背景配置
-        const config = window.__bgConfig;
         if (!config || !config.enabled) return;
 
         const background = document.getElementById('background');
