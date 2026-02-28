@@ -1,10 +1,13 @@
 ---
+import backgroundConfig from '../data/background-config.json';
+
 interface Props {
   title: string;
   description?: string;
 }
 
 const { title, description = "Angela的个人博客" } = Astro.props;
+const config = backgroundConfig;
 ---
 
 <!DOCTYPE html>
@@ -18,13 +21,25 @@ const { title, description = "Angela的个人博客" } = Astro.props;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <script define:vars={{ config }}>
+      window.__bgConfig = config;
+    </script>
   </head>
   <body>
-    <div class="background">
-      <div class="gradient gradient-1"></div>
-      <div class="gradient gradient-2"></div>
-      <div class="gradient gradient-3"></div>
+    {config.enabled && (
+    <div class="background" id="background">
+      {config.type === 'image' && config.image?.url && (
+        <div class="bg-image" id="bg-image"></div>
+      )}
+      {(!config.type || config.type === 'gradient') && (
+        <>
+          <div class="gradient gradient-1"></div>
+          <div class="gradient gradient-2"></div>
+          <div class="gradient gradient-3"></div>
+        </>
+      )}
     </div>
+    )}
     
     <header class="header">
       <nav class="nav">
@@ -47,6 +62,106 @@ const { title, description = "Angela的个人博客" } = Astro.props;
     <footer class="footer">
       <p>&copy; 2026 <a href="/AngelaPage/" style="color: inherit;">Angela</a>. All rights reserved.</p>
     </footer>
+
+    <script>
+      (function() {
+        const config = window.__bgConfig;
+        if (!config || !config.enabled) return;
+
+        const background = document.getElementById('background');
+        const bgImage = document.getElementById('bg-image');
+        const gradients = document.querySelectorAll('.gradient');
+        
+        if (!background) return;
+
+        // 处理背景图片
+        if (config.type === 'image' && config.image?.url && bgImage) {
+          bgImage.style.backgroundImage = `url(${config.image.url})`;
+          bgImage.style.opacity = config.image.opacity || 1;
+          bgImage.style.backgroundSize = config.image.size || 'cover';
+          bgImage.style.backgroundPosition = config.image.position || 'center';
+          bgImage.style.backgroundRepeat = config.image.repeat || 'no-repeat';
+        }
+
+        // 处理渐变背景
+        if ((!config.type || config.type === 'gradient') && gradients.length > 0) {
+          // 设置渐变颜色
+          if (config.fallbackGradient?.enabled) {
+            if (gradients[0]) gradients[0].style.background = config.fallbackGradient.color1 || '#667eea';
+            if (gradients[1]) gradients[1].style.background = config.fallbackGradient.color2 || '#764ba2';
+            if (gradients[2]) gradients[2].style.background = config.fallbackGradient.color3 || '#f093fb';
+          }
+        }
+
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+
+        // 鼠标交互处理
+        let targetX = 0, targetY = 0;
+        let currentX = 0, currentY = 0;
+        
+        const parallaxEnabled = config.mouseInteraction?.parallax?.enabled;
+        const parallaxStrength = parallaxEnabled ? (config.mouseInteraction.parallax.strength || 0.5) : 0;
+        
+        const zoomEnabled = config.mouseInteraction?.zoom?.enabled;
+        const zoomSensitivity = zoomEnabled ? (config.mouseInteraction.zoom.sensitivity || 1.0) : 0;
+        
+        const panEnabled = config.mouseInteraction?.pan?.enabled;
+        const panStrength = panEnabled ? (config.mouseInteraction.pan.strength || 0.3) : 0;
+
+        document.addEventListener('mousemove', (e) => {
+          targetX = (e.clientX - centerX) / centerX;
+          targetY = (e.clientY - centerY) / centerY;
+        });
+
+        // 动画循环
+        function animate() {
+          currentX += (targetX - currentX) * 0.05;
+          currentY += (targetY - currentY) * 0.05;
+
+          // 处理背景图片
+          if (bgImage && config.type === 'image') {
+            let transform = '';
+            
+            // 平移效果
+            if (panEnabled) {
+              const offsetX = currentX * 100 * panStrength;
+              const offsetY = currentY * 100 * panStrength;
+              transform += `translate(${offsetX}px, ${offsetY}px)`;
+            }
+            
+            // 缩放效果
+            if (zoomEnabled) {
+              const zoomFactor = 1 + (Math.abs(currentX) + Math.abs(currentY)) * 0.1 * zoomSensitivity;
+              transform += (transform ? ' ' : '') + `scale(${zoomFactor})`;
+            }
+            
+            if (transform) {
+              bgImage.style.transform = transform;
+            }
+          }
+
+          // 处理渐变球
+          if (gradients.length > 0) {
+            gradients.forEach((el, index) => {
+              // 视差效果：不同层以不同速度移动
+              const parallaxMultiplier = (index + 1) * 0.3;
+              const offsetX = currentX * 50 * parallaxStrength * parallaxMultiplier;
+              const offsetY = currentY * 50 * parallaxStrength * parallaxMultiplier;
+
+              // 缩放效果
+              const zoomFactor = 1 + (currentX * currentY * 0.1 * zoomSensitivity);
+
+              el.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) scale(${zoomFactor})`;
+            });
+          }
+
+          requestAnimationFrame(animate);
+        }
+
+        animate();
+      })();
+    </script>
   </body>
 </html>
 
@@ -91,44 +206,28 @@ const { title, description = "Angela的个人博客" } = Astro.props;
     overflow: hidden;
   }
 
+  .bg-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    will-change: transform;
+    transition: transform 0.1s ease-out;
+  }
+
   .gradient {
     position: absolute;
     border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.5;
-    animation: float 20s ease-in-out infinite;
-  }
-
-  .gradient-1 {
-    width: 600px;
-    height: 600px;
-    background: var(--accent);
-    top: -200px;
-    left: -200px;
-  }
-
-  .gradient-2 {
-    width: 500px;
-    height: 500px;
-    background: var(--accent-secondary);
-    bottom: -150px;
-    right: -150px;
-  }
-
-  .gradient-3 {
-    width: 400px;
-    height: 400px;
-    background: #f093fb;
-    top: 50%;
-    left: 50%;
     transform: translate(-50%, -50%);
+    will-change: transform;
   }
 
   @keyframes float {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    25% { transform: translate(30px, -30px) scale(1.05); }
-    50% { transform: translate(-20px, 20px) scale(0.95); }
-    75% { transform: translate(-30px, -20px) scale(1.02); }
+    0%, 100% { transform: translate(-50%, -50%) translate(0, 0) scale(1); }
+    25% { transform: translate(-50%, -50%) translate(30px, -30px) scale(1.05); }
+    50% { transform: translate(-50%, -50%) translate(-20px, 20px) scale(0.95); }
+    75% { transform: translate(-50%, -50%) translate(-30px, -20px) scale(1.02); }
   }
 
   .header {

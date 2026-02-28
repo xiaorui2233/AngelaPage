@@ -1,0 +1,31 @@
+{
+  "enabled": true,
+  "type": "image",
+  "image": {
+    "url": "",
+    "opacity": 1,
+    "size": "cover",
+    "position": "center",
+    "repeat": "no-repeat"
+  },
+  "fallbackGradient": {
+    "enabled": true,
+    "color1": "#667eea",
+    "color2": "#764ba2",
+    "color3": "#f093fb"
+  },
+  "mouseInteraction": {
+    "parallax": {
+      "enabled": true,
+      "strength": 0.5
+    },
+    "zoom": {
+      "enabled": true,
+      "sensitivity": 1.0
+    },
+    "pan": {
+      "enabled": true,
+      "strength": 0.3
+    }
+  }
+}
