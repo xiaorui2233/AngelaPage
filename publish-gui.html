@@ -213,6 +213,12 @@
       if (!title) errors.push('文章标题不能为空');
       if (!description) errors.push('文章描述不能为空');
       if (!content.trim()) errors.push('文章内容不能为空');
+      
+      // 检查标签
+      const tagsInput = document.getElementById('tags').value.trim();
+      if (!tagsInput) {
+        warnings.push('建议填写标签，如不填写将自动添加"默认"标签');
+      }
 
       // 检查标题长度
       if (title && title.length > 100) {
@@ -439,7 +445,7 @@
 
       const slug = slugify(title);
       const date = new Date().toISOString().split('T')[0];
-      const tagsArray = tags ? tags.split(',').map(t => t.trim()) : [];
+      const tagsArray = tags ? tags.split(',').map(t => t.trim()).filter(t => t) : ['默认'];
       
       const frontmatter = `---
 title: "${title}"
