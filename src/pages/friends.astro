@@ -1,0 +1,158 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const friends = [
+  {
+    name: "友人A",
+    description: "一个热爱技术的朋友",
+    url: "https://example.com"
+  },
+  {
+    name: "友人B",
+    description: "博客开发者",
+    url: "https://example.com"
+  }
+];
+---
+
+<BaseLayout title="友链 | Angela博客" description="我的朋友们">
+  <div class="friends-container">
+    <h1 class="page-title">友链</h1>
+    <p class="intro">感谢以下朋友们的链接交换~</p>
+    
+    <div class="friends-grid">
+      {friends.map((friend) => (
+        <a href={friend.url} target="_blank" class="friend-card">
+          <div class="avatar">
+            <div class="avatar-placeholder">{friend.name.charAt(0)}</div>
+          </div>
+          <div class="friend-info">
+            <h3 class="friend-name">{friend.name}</h3>
+            <p class="friend-description">{friend.description}</p>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    <div class="contact-section">
+      <h2>交换友链</h2>
+      <p>如果你想交换友链，欢迎通过以下方式联系我：</p>
+      <ul>
+        <li>GitHub: @xiaorui2233</li>
+        <li>Email: xiaorui2233@email.com</li>
+      </ul>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .friends-container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .page-title {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .intro {
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 3rem;
+  }
+
+  .friends-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+  }
+
+  .friend-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+  }
+
+  .friend-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-4px);
+  }
+
+  .avatar {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+
+  .avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .friend-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .friend-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+
+  .friend-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+  }
+
+  .contact-section {
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    padding: 2rem;
+    text-align: center;
+  }
+
+  .contact-section h2 {
+    margin-bottom: 1rem;
+  }
+
+  .contact-section p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+  }
+
+  .contact-section ul {
+    list-style: none;
+    display: flex;
+    gap: 2rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .contact-section li {
+    color: var(--text-secondary);
+  }
+</style>

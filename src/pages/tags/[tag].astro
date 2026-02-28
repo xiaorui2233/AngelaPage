@@ -1,0 +1,131 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts');
+  const tags = [...new Set(posts.flatMap((post) => post.data.tags || []))];
+  
+  return tags.map((tag) => ({
+    params: { tag },
+    props: {
+      posts: posts.filter((post) => post.data.tags?.includes(tag)),
+    },
+  }));
+}
+
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+
+const sortedPosts = posts.sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+---
+
+<BaseLayout title={`标签: ${tag} | Angela博客`} description={`带有标签 ${tag} 的所有文章`}>
+  <div class="tag-posts-container">
+    <div class="header">
+      <a href="/tags" class="back-link">← 返回标签页</a>
+      <h1 class="page-title">标签: {tag}</h1>
+      <p class="count">共 {posts.length} 篇文章</p>
+    </div>
+
+    <div class="posts-list">
+      {sortedPosts.map((post) => (
+        <a href={`/posts/${post.slug}`} class="post-item">
+          <time datetime={post.data.pubDate.toISOString()}>
+            {post.data.pubDate.toLocaleDateString('zh-CN')}
+          </time>
+          <span class="post-title">{post.data.title}</span>
+          {post.data.category && <span class="category-tag">{post.data.category}</span>}
+        </a>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .tag-posts-container {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .back-link {
+    display: inline-block;
+    color: var(--text-secondary);
+    text-decoration: none;
+    margin-bottom: 1rem;
+    transition: color 0.3s ease;
+  }
+
+  .back-link:hover {
+    color: var(--accent);
+  }
+
+  .page-title {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .count {
+    color: var(--text-secondary);
+  }
+
+  .posts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .post-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.2rem 1.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s ease;
+  }
+
+  .post-item:hover {
+    border-color: var(--accent);
+    transform: translateX(8px);
+  }
+
+  .post-item time {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .post-item .post-title {
+    flex: 1;
+    font-weight: 500;
+  }
+
+  .category-tag {
+    flex-shrink: 0;
+    padding: 0.2rem 0.6rem;
+    background: rgba(102, 126, 234, 0.2);
+    border-radius: 10px;
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 768px) {
+    .post-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+  }
+</style>
