@@ -2,7 +2,7 @@
   "enabled": true,
   "type": "image",
   "image": {
-    "url": "https://images.alphacoders.com/114/thumb-1920-1145870.png",
+    "url": "/AngelaPage/images/background.png",
     "opacity": 0.1,
     "size": "cover",
     "position": "center",
