@@ -2,7 +2,7 @@
   "enabled": true,
   "type": "image",
   "image": {
-    "url": "https://images.alphacoders.com/114/thumb-1920-1145870.png",
+    "url": "http://110.42.44.4:3000/images/1772364806761_1145870.png",
     "opacity": 0.1,
     "size": "cover",
     "position": "center",
@@ -50,5 +50,10 @@
     "enabled": true,
     "duration": 850,
     "color": "#2481f9"
+  },
+  "bgLoader": {
+    "enabled": true,
+    "color": "#667eea",
+    "size": 60
   }
 }
