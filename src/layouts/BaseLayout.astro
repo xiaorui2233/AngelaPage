@@ -319,6 +319,10 @@ const config = backgroundConfig;
 
           // 使用 View Transitions API 实现圆形内显示新页面
           if (document.startViewTransition) {
+            // 设置动画时长
+            const duration = transitionConfig.duration || 600;
+            document.documentElement.style.setProperty('--transition-duration', duration + 'ms');
+
             // 添加 class 用于 CSS 选择器
             document.documentElement.classList.add('page-transition-active');
 
@@ -560,14 +564,15 @@ const config = backgroundConfig;
   :root.page-transition-active {
     --click-x: var(--click-x, 50%);
     --click-y: var(--click-y, 50%);
+    --transition-duration: 600ms;
   }
 
   ::view-transition-old(root) {
-    animation: vt-old-expand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: vt-old-expand var(--transition-duration, 600ms) cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   ::view-transition-new(root) {
-    animation: vt-new-expand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: vt-new-expand var(--transition-duration, 600ms) cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   @keyframes vt-old-expand {
@@ -584,6 +589,23 @@ const config = backgroundConfig;
       clip-path: circle(0% at var(--click-x) var(--click-y));
     }
     100% {
+      clip-path: circle(150% at var(--click-x) var(--click-y));
+    }
+  }
+
+  /* 备用遮罩动画 */
+  .page-transition-mask.active {
+    animation: circle-expand var(--transition-duration, 600ms) cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    pointer-events: auto;
+  }
+
+  @keyframes circle-expand {
+    0% {
+      opacity: 1;
+      clip-path: circle(0% at var(--click-x) var(--click-y));
+    }
+    100% {
+      opacity: 1;
       clip-path: circle(150% at var(--click-x) var(--click-y));
     }
   }
