@@ -3,7 +3,7 @@
   "type": "image",
   "image": {
     "url": "https://images.alphacoders.com/114/thumb-1920-1145870.png",
-    "opacity": 0.6,
+    "opacity": 0.1,
     "size": "cover",
     "position": "center",
     "repeat": "no-repeat"
@@ -17,7 +17,7 @@
   "mouseInteraction": {
     "parallax": {
       "enabled": true,
-      "strength": 0.6
+      "strength": 0.3
     },
     "zoom": {
       "enabled": true,
@@ -25,18 +25,25 @@
     },
     "pan": {
       "enabled": true,
-      "strength": 0.6
+      "strength": 0.3
     }
   },
   "cursorFollower": {
     "enabled": true,
     "size": 42,
-    "hoverSize": 75,
+    "hoverSize": 71,
     "borderColor": "#4b98d2",
     "borderOpacity": 0.8,
-    "fillColor": "#a531f2",
-    "fillOpacity": 0.2,
+    "fillColor": "#ffffff",
+    "fillOpacity": 0.1,
     "blendMode": "difference",
-    "followSpeed": 0.09
+    "followSpeed": 0.11
+  },
+  "entryAnimation": {
+    "enabled": true,
+    "type": "combined",
+    "duration": 0.8,
+    "stagger": 0.1,
+    "targets": "all"
   }
 }

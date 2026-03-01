@@ -44,7 +44,7 @@ const config = backgroundConfig;
     </div>
     )}
     
-    <header class="header">
+    <header class="header entry-animate" data-index="1">
       <nav class="nav">
         <a href="/AngelaPage/" class="logo">Angela</a>
         <div class="nav-links">
@@ -58,11 +58,11 @@ const config = backgroundConfig;
       </nav>
     </header>
 
-    <main class="main">
+    <main class="main entry-animate" data-index="2">
       <slot />
     </main>
 
-    <footer class="footer">
+    <footer class="footer entry-animate" data-index="3">
       <p>&copy; 2026 <a href="/AngelaPage/" style="color: inherit;">Angela</a>. All rights reserved.</p>
     </footer>
 
@@ -243,6 +243,71 @@ const config = backgroundConfig;
 
         animate();
       })();
+
+      // 入场动画
+      (function() {
+        const entryConfig = config?.entryAnimation || {
+          enabled: true,
+          type: 'combined',
+          duration: 0.8,
+          stagger: 0.1,
+          targets: 'all'
+        };
+
+        if (!entryConfig.enabled) return;
+
+        const targets = entryConfig.targets;
+        const duration = entryConfig.duration || 0.8;
+        const stagger = entryConfig.stagger || 0.1;
+        const type = entryConfig.type || 'combined';
+
+        const elements = document.querySelectorAll('.entry-animate');
+        
+        // 根据配置筛选元素
+        elements.forEach(el => {
+          const index = parseInt(el.dataset.index) || 1;
+          const delay = (index - 1) * stagger;
+          
+          el.style.opacity = '0';
+          el.style.animation = 'none';
+          
+          setTimeout(() => {
+            let animationName = '';
+            let transform = '';
+            
+            switch(type) {
+              case 'fade':
+                animationName = 'fadeIn';
+                break;
+              case 'slide':
+                animationName = 'slideIn';
+                transform = 'translateY(30px)';
+                break;
+              case 'scale':
+                animationName = 'scaleIn';
+                transform = 'scale(0.8)';
+                break;
+              case 'combined':
+              default:
+                // 交替使用不同动画
+                if (index === 1) {
+                  animationName = 'fadeIn';
+                } else if (index === 2) {
+                  animationName = 'slideIn';
+                  transform = 'translateY(30px)';
+                } else {
+                  animationName = 'scaleIn';
+                  transform = 'scale(0.8)';
+                }
+            }
+            
+            el.style.animation = `${animationName} ${duration}s ease-out forwards`;
+            if (transform) {
+              el.style.transform = transform;
+            }
+          }, delay * 1000);
+        });
+      })();
     </script>
   </body>
 </html>
@@ -415,6 +480,38 @@ const config = backgroundConfig;
     padding: 2rem;
     color: var(--text-secondary);
     font-size: 0.9rem;
+  }
+
+  /* 入场动画 */
+  .entry-animate {
+    opacity: 0;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideIn {
+    from { 
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to { 
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scaleIn {
+    from { 
+      opacity: 0;
+      transform: scale(0.8);
+    }
+    to { 
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 
   @media (max-width: 768px) {
