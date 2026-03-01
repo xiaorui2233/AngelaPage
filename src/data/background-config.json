@@ -37,11 +37,11 @@
   },
   "cursorFollower": {
     "enabled": true,
-    "size": 42,
-    "hoverSize": 71,
+    "size": 24,
+    "hoverSize": 51,
     "borderColor": "#4b98d2",
     "borderOpacity": 0.8,
-    "fillColor": "#ffffff",
+    "fillColor": "#df5d5d",
     "fillOpacity": 0.1,
     "blendMode": "difference",
     "followSpeed": 0.11
