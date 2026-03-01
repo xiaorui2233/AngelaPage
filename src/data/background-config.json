@@ -2,10 +2,10 @@
   "enabled": true,
   "type": "image",
   "image": {
-    "url": "http://110.42.44.4:3000/images/1772364806761_1145870.png",
+    "url": "https://images.alphacoders.com/114/thumb-1920-1145870.png",
     "sources": [
-      "http://110.42.44.4:3000/images/1772364806761_1145870.png",
-      "https://images.alphacoders.com/114/thumb-1920-1145870.png"
+      "https://images.alphacoders.com/114/thumb-1920-1145870.png",
+      "http://110.42.44.4:3000/images/1772364806761_1145870.png"
     ],
     "opacity": 0.1,
     "size": "cover",
