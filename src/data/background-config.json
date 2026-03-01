@@ -28,12 +28,21 @@
       "strength": 0.3
     }
   },
+  "entranceAnimation": {
+    "enabled": true,
+    "type": "slide-up",
+    "duration": 0.8,
+    "delay": 0.2,
+    "easing": "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+  },
   "cursorFollower": {
     "enabled": true,
     "size": 42,
     "hoverSize": 71,
     "borderColor": "#4b98d2",
-    "fillColor": "rgba(0, 255, 170, 0.1)",
+    "borderOpacity": 0.8,
+    "fillColor": "#ffffff",
+    "fillOpacity": 0.1,
     "blendMode": "difference",
     "followSpeed": 0.11
   }
