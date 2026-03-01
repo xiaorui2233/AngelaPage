@@ -24,9 +24,30 @@ const config = backgroundConfig;
     <script define:vars={{ config }}>
       window.__bgConfig = config;
     </script>
+    <style define:vars={{
+      animDuration: config.entranceAnimation?.duration ? `${config.entranceAnimation.duration}s` : '0.8s',
+      animDelay: config.entranceAnimation?.delay ? `${config.entranceAnimation.delay}s` : '0s',
+      animEasing: config.entranceAnimation?.easing || 'ease-out'
+    }}>
+      .entrance-animate {
+        animation-duration: var(--animDuration);
+        animation-delay: var(--animDelay);
+        animation-timing-function: var(--animEasing);
+        animation-fill-mode: both;
+      }
+      
+      @keyframes anim-fade { from { opacity: 0; } to { opacity: 1; } }
+      @keyframes anim-slide-up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes anim-slide-down { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes anim-zoom-in { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+      
+      .anim-type-fade { animation-name: anim-fade; }
+      .anim-type-slide-up { animation-name: anim-slide-up; }
+      .anim-type-slide-down { animation-name: anim-slide-down; }
+      .anim-type-zoom-in { animation-name: anim-zoom-in; }
+    </style>
   </head>
   <body>
-    <!-- 鼠标跟随圆圈 -->
     <div class="cursor-follower" id="cursor-follower"></div>
     
     {config.enabled && (
@@ -58,7 +79,7 @@ const config = backgroundConfig;
       </nav>
     </header>
 
-    <main class="main">
+    <main class={`main ${config.entranceAnimation?.enabled ? 'entrance-animate anim-type-' + (config.entranceAnimation?.type || 'slide-up') : ''}`}>
       <slot />
     </main>
 
@@ -112,7 +133,7 @@ const config = backgroundConfig;
           mouseX = e.clientX;
           mouseY = e.clientY;
         });
-
+        
         // 鼠标跟随动画
         function animateCursor() {
           if (cursorConfig.enabled) {
@@ -128,7 +149,6 @@ const config = backgroundConfig;
 
         // 可交互元素检测
         const interactiveSelectors = 'a, button, input, textarea, select, [role="button"], .clickable, .nav-links a, .btn';
-        
         document.addEventListener('mouseover', (e) => {
           if (cursorConfig.enabled && e.target.closest(interactiveSelectors)) {
             cursor.classList.add('hovering');
@@ -187,7 +207,7 @@ const config = backgroundConfig;
         
         const zoomEnabled = config.mouseInteraction?.zoom?.enabled;
         const zoomSensitivity = zoomEnabled ? (config.mouseInteraction.zoom.sensitivity || 1.0) : 0;
-        
+
         const panEnabled = config.mouseInteraction?.pan?.enabled;
         const panStrength = panEnabled ? (config.mouseInteraction.pan.strength || 0.3) : 0;
 
@@ -204,7 +224,7 @@ const config = backgroundConfig;
           // 处理背景图片
           if (bgImage && config.type === 'image') {
             let transform = '';
-            
+
             // 平移效果
             if (panEnabled) {
               const offsetX = currentX * 100 * panStrength;
@@ -228,6 +248,7 @@ const config = backgroundConfig;
             gradients.forEach((el, index) => {
               // 视差效果：不同层以不同速度移动
               const parallaxMultiplier = (index + 1) * 0.3;
+              
               const offsetX = currentX * 50 * parallaxStrength * parallaxMultiplier;
               const offsetY = currentY * 50 * parallaxStrength * parallaxMultiplier;
 

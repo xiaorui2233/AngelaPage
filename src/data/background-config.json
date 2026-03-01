@@ -33,9 +33,7 @@
     "size": 42,
     "hoverSize": 71,
     "borderColor": "#4b98d2",
-    "borderOpacity": 0.8,
-    "fillColor": "#ffffff",
-    "fillOpacity": 0.1,
+    "fillColor": "rgba(0, 255, 170, 0.1)",
     "blendMode": "difference",
     "followSpeed": 0.11
   }
