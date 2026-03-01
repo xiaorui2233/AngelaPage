@@ -48,7 +48,7 @@
   },
   "pageTransition": {
     "enabled": true,
-    "duration": 600,
-    "color": "#0f0f23"
+    "duration": 850,
+    "color": "#2481f9"
   }
 }
