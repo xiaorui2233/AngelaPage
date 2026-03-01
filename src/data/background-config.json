@@ -38,12 +38,5 @@
     "fillOpacity": 0.1,
     "blendMode": "difference",
     "followSpeed": 0.11
-  },
-  "entryAnimation": {
-    "enabled": true,
-    "type": "combined",
-    "duration": 0.8,
-    "stagger": 0.1,
-    "targets": "all"
   }
 }
