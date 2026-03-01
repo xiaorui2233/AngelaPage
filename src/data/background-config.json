@@ -45,5 +45,10 @@
     "fillOpacity": 0.1,
     "blendMode": "difference",
     "followSpeed": 0.11
+  },
+  "pageTransition": {
+    "enabled": true,
+    "duration": 600,
+    "color": "#0f0f23"
   }
 }

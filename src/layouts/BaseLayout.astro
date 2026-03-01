@@ -87,6 +87,9 @@ const config = backgroundConfig;
       <p>&copy; 2026 <a href="/AngelaPage/" style="color: inherit;">Angela</a>. All rights reserved.</p>
     </footer>
 
+    <!-- 页面切换圆形扩散遮罩 -->
+    <div class="page-transition-mask" id="page-transition-mask"></div>
+
     <script>
       (function() {
         // 读取鼠标跟随配置
@@ -264,6 +267,92 @@ const config = backgroundConfig;
 
         animate();
       })();
+
+      // 页面切换圆形扩散动画（圆形内显示新页面）
+      (function() {
+        const transitionMask = document.getElementById('page-transition-mask');
+        if (!transitionMask) return;
+
+        const transitionConfig = window.__bgConfig?.pageTransition || {
+          enabled: true,
+          duration: 600,
+          color: '#0f0f23'
+        };
+
+        if (!transitionConfig.enabled) return;
+
+        // 设置遮罩颜色
+        transitionMask.style.background = transitionConfig.color || '#0f0f23';
+
+        // 拦截链接点击
+        document.addEventListener('click', function(e) {
+          // 查找最近的链接元素
+          const link = e.target.closest('a');
+          if (!link) return;
+
+          // 排除外部链接和新窗口链接
+          const href = link.getAttribute('href');
+          if (!href) return;
+          if (href.startsWith('http') && !href.includes(window.location.host)) return;
+          if (link.target === '_blank') return;
+          if (link.hasAttribute('download')) return;
+
+          // 排除锚点链接（同一页面跳转）
+          if (href.startsWith('#')) return;
+
+          // 排除当前页面的链接
+          const currentPath = window.location.pathname;
+          const linkPath = href.split('?')[0].split('#')[0];
+          if (currentPath === linkPath || currentPath.endsWith(linkPath)) return;
+
+          // 阻止默认行为
+          e.preventDefault();
+          e.stopPropagation();
+
+          // 设置点击位置 CSS 变量
+          const clickX = e.clientX;
+          const clickY = e.clientY;
+          document.documentElement.style.setProperty('--click-x', clickX + 'px');
+          document.documentElement.style.setProperty('--click-y', clickY + 'px');
+          transitionMask.style.setProperty('--click-x', clickX + 'px');
+          transitionMask.style.setProperty('--click-y', clickY + 'px');
+
+          // 使用 View Transitions API 实现圆形内显示新页面
+          if (document.startViewTransition) {
+            // 添加 class 用于 CSS 选择器
+            document.documentElement.classList.add('page-transition-active');
+
+            // 开始 View Transition
+            document.startViewTransition(() => {
+              // 跳转到新页面
+              window.location.href = href;
+            });
+          } else {
+            // 兼容不支持 View Transitions 的浏览器
+            transitionMask.classList.add('active');
+            const duration = transitionConfig.duration || 600;
+            setTimeout(() => {
+              window.location.href = href;
+            }, duration);
+          }
+        }, false);
+
+        // 处理 View Transition 结束
+        document.addEventListener('transitionrun', (e) => {
+          if (e.viewTransition) {
+            e.viewTransition.finished.then(() => {
+              document.documentElement.classList.remove('page-transition-active');
+              transitionMask.classList.remove('active');
+            });
+          }
+        });
+
+        // 处理浏览器前进/后退
+        window.addEventListener('pageshow', function() {
+          transitionMask.classList.remove('active');
+          document.documentElement.classList.remove('page-transition-active');
+        });
+      })();
     </script>
   </body>
 </html>
@@ -436,6 +525,67 @@ const config = backgroundConfig;
     padding: 2rem;
     color: var(--text-secondary);
     font-size: 0.9rem;
+  }
+
+  /* 页面切换圆形扩散效果 */
+  .page-transition-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    background: var(--bg-primary);
+  }
+
+  .page-transition-mask.active {
+    animation: circle-expand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    pointer-events: auto;
+  }
+
+  @keyframes circle-expand {
+    0% {
+      opacity: 1;
+      clip-path: circle(0% at var(--click-x) var(--click-y));
+    }
+    100% {
+      opacity: 1;
+      clip-path: circle(150% at var(--click-x) var(--click-y));
+    }
+  }
+
+  /* View Transitions 圆形扩展效果 */
+  :root.page-transition-active {
+    --click-x: var(--click-x, 50%);
+    --click-y: var(--click-y, 50%);
+  }
+
+  ::view-transition-old(root) {
+    animation: vt-old-expand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  ::view-transition-new(root) {
+    animation: vt-new-expand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  @keyframes vt-old-expand {
+    0% {
+      clip-path: circle(0% at var(--click-x) var(--click-y));
+    }
+    100% {
+      clip-path: circle(150% at var(--click-x) var(--click-y));
+    }
+  }
+
+  @keyframes vt-new-expand {
+    0% {
+      clip-path: circle(0% at var(--click-x) var(--click-y));
+    }
+    100% {
+      clip-path: circle(150% at var(--click-x) var(--click-y));
+    }
   }
 
   @media (max-width: 768px) {
