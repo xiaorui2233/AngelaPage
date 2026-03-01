@@ -12,7 +12,11 @@
     "opacity": 0.1,
     "size": "cover",
     "position": "center",
-    "repeat": "no-repeat"
+    "repeat": "no-repeat",
+    "sources": [
+      "https://images.alphacoders.com/114/thumb-1920-1145870.png",
+      "/AngelaPage/images/background.jpg"
+    ]
   },
   "fallbackGradient": {
     "enabled": true,

@@ -52,7 +52,7 @@ const config = backgroundConfig;
     
     {config.enabled && (
     <div class="background" id="background">
-      {config.type === 'image' && config.image?.url && (
+      {(config.type === 'image' && (config.image?.url || config.image?.sources)) && (
         <div class="bg-image" id="bg-image"></div>
       )}
       {(!config.type || config.type === 'gradient') && (
@@ -185,52 +185,76 @@ const config = backgroundConfig;
         
         if (!background) return;
 
-        // 处理背景图片
-        if (config.type === 'image' && config.image?.url && bgImage) {
+        // 处理背景图片（支持多源）
+        if (config.type === 'image' && bgImage) {
           const bgLoader = document.getElementById('bg-loader');
           const progressCircle = document.querySelector('.progress-ring-circle');
-          const circleLength = 2 * Math.PI * 26; // r=26
+          const loaderConfig = config.bgLoader || { enabled: true, color: '#667eea', size: 60 };
 
-          if (bgLoader && progressCircle) {
-            bgLoader.classList.add('active');
-            progressCircle.style.strokeDasharray = circleLength;
-            progressCircle.style.strokeDashoffset = circleLength;
+          // 获取所有图片源
+          const sources = config.image?.sources || (config.image?.url ? [config.image.url] : []);
+          const currentUrl = sources[0] || '';
+
+          if (!currentUrl) return;
+
+          // 尝试加载图片的函数
+          function tryLoadImage(urls, index) {
+            if (index >= urls.length) {
+              // 所有图片都加载失败，隐藏进度条
+              if (bgLoader) bgLoader.classList.remove('active');
+              return;
+            }
+
+            const url = urls[index];
+            const img = new Image();
+
+            img.onload = function() {
+              bgImage.style.backgroundImage = `url(${url})`;
+              bgImage.style.opacity = config.image.opacity || 1;
+              bgImage.style.backgroundSize = config.image.size || 'cover';
+              bgImage.style.backgroundPosition = config.image.position || 'center';
+              bgImage.style.backgroundRepeat = config.image.repeat || 'no-repeat';
+              if (bgLoader) bgLoader.classList.remove('active');
+            };
+
+            img.onerror = function() {
+              // 当前图片加载失败，尝试下一个
+              tryLoadImage(urls, index + 1);
+            };
+
+            if (loaderConfig.enabled && bgLoader && progressCircle) {
+              // 显示进度条
+              progressCircle.style.stroke = loaderConfig.color || '#667eea';
+              const size = loaderConfig.size || 60;
+              bgLoader.querySelector('svg').setAttribute('width', size);
+              bgLoader.querySelector('svg').setAttribute('height', size);
+              const radius = size / 2 - 6;
+              progressCircle.setAttribute('r', radius);
+              progressCircle.setAttribute('cx', size / 2);
+              progressCircle.setAttribute('cy', size / 2);
+              const circleLength = 2 * Math.PI * radius;
+              bgLoader.classList.add('active');
+              progressCircle.style.strokeDasharray = circleLength;
+              progressCircle.style.strokeDashoffset = circleLength;
+
+              // 模拟进度
+              let progress = 0;
+              const progressInterval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress >= 90) {
+                  clearInterval(progressInterval);
+                } else {
+                  const offset = circleLength - (progress / 100) * circleLength;
+                  progressCircle.style.strokeDashoffset = offset;
+                }
+              }, 100);
+            }
+
+            img.src = url;
           }
 
-          // 预加载图片并监听进度
-          const img = new Image();
-          img.onload = function() {
-            bgImage.style.backgroundImage = `url(${config.image.url})`;
-            bgImage.style.opacity = config.image.opacity || 1;
-            bgImage.style.backgroundSize = config.image.size || 'cover';
-            bgImage.style.backgroundPosition = config.image.position || 'center';
-            bgImage.style.backgroundRepeat = config.image.repeat || 'no-repeat';
-
-            // 隐藏进度条
-            if (bgLoader) {
-              bgLoader.classList.remove('active');
-            }
-          };
-          img.onerror = function() {
-            // 图片加载失败也隐藏进度条
-            if (bgLoader) {
-              bgLoader.classList.remove('active');
-            }
-          };
-          // 模拟进度条动画（因为 onload 不会分阶段触发）
-          if (progressCircle) {
-            let progress = 0;
-            const progressInterval = setInterval(() => {
-              progress += Math.random() * 30;
-              if (progress >= 90) {
-                clearInterval(progressInterval);
-              } else {
-                const offset = circleLength - (progress / 100) * circleLength;
-                progressCircle.style.strokeDashoffset = offset;
-              }
-            }, 100);
-          }
-          img.src = config.image.url;
+          // 开始尝试加载
+          tryLoadImage(sources, 0);
         }
 
         // 处理渐变背景
