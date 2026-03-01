@@ -62,6 +62,12 @@ const config = backgroundConfig;
           <div class="gradient gradient-3"></div>
         </>
       )}
+      <!-- 背景加载圆形进度条 -->
+      <div class="bg-loader" id="bg-loader">
+        <svg class="progress-ring" width="60" height="60">
+          <circle class="progress-ring-circle" stroke="#667eea" stroke-width="4" fill="transparent" r="26" cx="30" cy="30"/>
+        </svg>
+      </div>
     </div>
     )}
     
@@ -181,11 +187,50 @@ const config = backgroundConfig;
 
         // 处理背景图片
         if (config.type === 'image' && config.image?.url && bgImage) {
-          bgImage.style.backgroundImage = `url(${config.image.url})`;
-          bgImage.style.opacity = config.image.opacity || 1;
-          bgImage.style.backgroundSize = config.image.size || 'cover';
-          bgImage.style.backgroundPosition = config.image.position || 'center';
-          bgImage.style.backgroundRepeat = config.image.repeat || 'no-repeat';
+          const bgLoader = document.getElementById('bg-loader');
+          const progressCircle = document.querySelector('.progress-ring-circle');
+          const circleLength = 2 * Math.PI * 26; // r=26
+
+          if (bgLoader && progressCircle) {
+            bgLoader.classList.add('active');
+            progressCircle.style.strokeDasharray = circleLength;
+            progressCircle.style.strokeDashoffset = circleLength;
+          }
+
+          // 预加载图片并监听进度
+          const img = new Image();
+          img.onload = function() {
+            bgImage.style.backgroundImage = `url(${config.image.url})`;
+            bgImage.style.opacity = config.image.opacity || 1;
+            bgImage.style.backgroundSize = config.image.size || 'cover';
+            bgImage.style.backgroundPosition = config.image.position || 'center';
+            bgImage.style.backgroundRepeat = config.image.repeat || 'no-repeat';
+
+            // 隐藏进度条
+            if (bgLoader) {
+              bgLoader.classList.remove('active');
+            }
+          };
+          img.onerror = function() {
+            // 图片加载失败也隐藏进度条
+            if (bgLoader) {
+              bgLoader.classList.remove('active');
+            }
+          };
+          // 模拟进度条动画（因为 onload 不会分阶段触发）
+          if (progressCircle) {
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+              progress += Math.random() * 30;
+              if (progress >= 90) {
+                clearInterval(progressInterval);
+              } else {
+                const offset = circleLength - (progress / 100) * circleLength;
+                progressCircle.style.strokeDashoffset = offset;
+              }
+            }, 100);
+          }
+          img.src = config.image.url;
         }
 
         // 处理渐变背景
@@ -432,6 +477,31 @@ const config = backgroundConfig;
     border-radius: 50%;
     transform: translate(-50%, -50%);
     will-change: transform;
+  }
+
+  /* 背景加载圆形进度条 */
+  .bg-loader {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 9998;
+    display: none;
+  }
+
+  .bg-loader.active {
+    display: block;
+  }
+
+  .progress-ring {
+    transform: rotate(-90deg);
+  }
+
+  .progress-ring-circle {
+    stroke-dasharray: 163.36;
+    stroke-dashoffset: 163.36;
+    transition: stroke-dashoffset 0.3s ease;
+    stroke-linecap: round;
   }
 
   /* 鼠标跟随圆圈 */
