@@ -17,7 +17,7 @@
   "mouseInteraction": {
     "parallax": {
       "enabled": true,
-      "strength": 0.3
+      "strength": 0.6
     },
     "zoom": {
       "enabled": true,
