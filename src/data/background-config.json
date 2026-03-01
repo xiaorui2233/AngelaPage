@@ -2,10 +2,10 @@
   "enabled": true,
   "type": "image",
   "image": {
-    "url": "https://ibb.co/HpXPcn0y",
+    "url": "https://images.alphacoders.com/114/thumb-1920-1145870.png",
     "sources": [
-      "https://ibb.co/HpXPcn0y",
       "https://images.alphacoders.com/114/thumb-1920-1145870.png",
+      "https://ibb.co/HpXPcn0y",
       "https://github.com/xiaorui2233/AngelaPage/blob/main/images/background.png?raw=true",
       "http://110.42.44.4:3000/images/1772364806761_1145870.png"
     ],
