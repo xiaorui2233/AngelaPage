@@ -29,6 +29,19 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+
+      - name: Sync images to public/images
+        run: |
+          set -e
+          mkdir -p public/images
+          if [ -d images ]; then
+            cp -afv images/. public/images/
+          else
+            echo "No ./images directory found; continuing with existing public/images assets."
+          fi
+          echo "Copied image files to public/images:"
+          ls -lah public/images || true
+
       - name: Build
         run: npm run build
 
