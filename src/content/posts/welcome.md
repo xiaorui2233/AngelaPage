@@ -25,6 +25,10 @@ category: "随笔"
 - **Astro** - 静态站点生成器
 - **Markdown** - 内容管理
 - **毛玻璃效果** - 现代 UI 设计
+
+![博客背景示例](/AngelaPage/images/background.png)
+
+> 你也可以在发布工具中一键选择仓库图片并插入到文章。
 ##AWA
 ---
 

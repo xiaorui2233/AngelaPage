@@ -29,6 +29,12 @@ const relatedPosts = allPosts
 <BaseLayout title={`${post.data.title} | Angela Blog`} description={post.data.description}>
   <article class="post-grid">
     <div class="post-main">
+      {post.data.cover && (
+        <div class="post-cover">
+          <img src={post.data.cover} alt={post.data.title} loading="lazy" />
+        </div>
+      )}
+
       <header class="post-header">
         <p class="meta">
           <time datetime={post.data.pubDate.toISOString()}>{post.data.pubDate.toLocaleDateString('zh-CN')}</time>
@@ -82,11 +88,30 @@ const relatedPosts = allPosts
       </div>
     </aside>
   </article>
+
+
+  <script is:inline>
+    (() => {
+      const imgs = document.querySelectorAll('.prose img');
+      imgs.forEach((img) => {
+        const src = img.getAttribute('src') || '';
+        if (src.startsWith('/images/')) {
+          img.setAttribute('src', `/AngelaPage${src}`);
+        } else if (!src.startsWith('http') && !src.startsWith('/AngelaPage/') && !src.startsWith('data:')) {
+          img.setAttribute('src', `/AngelaPage/${src.replace(/^\/+/, '')}`);
+        }
+        img.setAttribute('loading', 'lazy');
+      });
+    })();
+  </script>
+
 </BaseLayout>
 
 <style>
   .post-grid { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 1.2rem; }
   .post-main { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 1.4rem; }
+  .post-cover { margin: -1.4rem -1.4rem 1rem; height: clamp(180px, 30vw, 300px); overflow: hidden; border-radius: 14px 14px 0 0; border-bottom: 1px solid var(--border); background: var(--surface); }
+  .post-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .meta { margin: 0; color: var(--text-muted); display: flex; gap: 0.45rem; align-items: center; font-size: 0.92rem; }
   h1 { margin: 0.7rem 0 0.8rem; font-size: clamp(1.6rem, 3.4vw, 2.3rem); }
   .tags { display: flex; flex-wrap: wrap; gap: 0.45rem; }
@@ -96,6 +121,9 @@ const relatedPosts = allPosts
   .prose :global(h2), .prose :global(h3) { color: var(--text-primary); margin-top: 1.4rem; }
   .prose :global(pre) { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.8rem; }
   .prose :global(code) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .prose :global(img) { width: 100%; max-width: 100%; border-radius: 12px; border: 1px solid var(--border); margin: 1rem 0; display: block; }
+  .prose :global(figure) { margin: 1rem 0; }
+  .prose :global(figcaption) { color: var(--text-muted); font-size: 0.85rem; text-align: center; margin-top: .4rem; }
 
   .related { margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.2rem; }
   .related h2 { margin: 0 0 0.8rem; font-size: 1.1rem; }
