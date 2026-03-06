@@ -1,4 +1,6 @@
 ---
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
 import backgroundConfig from '../data/background-config.json';
 
 interface Props {
@@ -6,734 +8,532 @@ interface Props {
   description?: string;
 }
 
-const { title, description = "Angela的个人博客" } = Astro.props;
+const { title, description = 'Angela 的个人技术博客' } = Astro.props;
 const config = backgroundConfig;
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/AngelaPage/favicon.svg" />
     <title>{title}</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <script define:vars={{ config }}>
-      window.__bgConfig = config;
+      window.__defaultBgConfig = config;
     </script>
-    <style define:vars={{
-      animDuration: config.entranceAnimation?.duration ? `${config.entranceAnimation.duration}s` : '0.8s',
-      animDelay: config.entranceAnimation?.delay ? `${config.entranceAnimation.delay}s` : '0s',
-      animEasing: config.entranceAnimation?.easing || 'ease-out'
-    }}>
-      .entrance-animate {
-        animation-duration: var(--animDuration);
-        animation-delay: var(--animDelay);
-        animation-timing-function: var(--animEasing);
-        animation-fill-mode: both;
-      }
-      
-      @keyframes anim-fade { from { opacity: 0; } to { opacity: 1; } }
-      @keyframes anim-slide-up { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes anim-slide-down { from { opacity: 0; transform: translateY(-40px); } to { opacity: 1; transform: translateY(0); } }
-      @keyframes anim-zoom-in { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
-      
-      .anim-type-fade { animation-name: anim-fade; }
-      .anim-type-slide-up { animation-name: anim-slide-up; }
-      .anim-type-slide-down { animation-name: anim-slide-down; }
-      .anim-type-zoom-in { animation-name: anim-zoom-in; }
-    </style>
   </head>
   <body>
-    <div class="cursor-follower" id="cursor-follower"></div>
-    
-    {config.enabled && (
-    <div class="background" id="background">
-      {(config.type === 'image' && (config.image?.url || config.image?.sources)) && (
-        <div class="bg-image" id="bg-image"></div>
-      )}
-      {(!config.type || config.type === 'gradient') && (
-        <>
-          <div class="gradient gradient-1"></div>
-          <div class="gradient gradient-2"></div>
-          <div class="gradient gradient-3"></div>
-        </>
-      )}
-      <!-- 背景加载圆形进度条 -->
+    <div class="cursor-follower" id="cursor-follower" aria-hidden="true"></div>
+
+    <div class="background" id="background" aria-hidden="true">
+      <div class="bg-image" id="bg-image"></div>
+      <div class="gradient gradient-1"></div>
+      <div class="gradient gradient-2"></div>
+      <div class="gradient gradient-3"></div>
       <div class="bg-loader" id="bg-loader">
         <svg class="progress-ring" width="60" height="60">
-          <circle class="progress-ring-circle" stroke="#667eea" stroke-width="4" fill="transparent" r="26" cx="30" cy="30"/>
+          <circle class="progress-ring-circle" stroke="#667eea" stroke-width="4" fill="transparent" r="26" cx="30" cy="30" />
         </svg>
       </div>
     </div>
-    )}
-    
-    <header class="header">
-      <nav class="nav">
-        <a href="/AngelaPage/" class="logo">Angela</a>
-        <div class="nav-links">
-          <a href="/AngelaPage/">首页</a>
-          <a href="/AngelaPage/archive">归档</a>
-          <a href="/AngelaPage/tags">标签</a>
-          <a href="/AngelaPage/search">搜索</a>
-          <a href="/AngelaPage/friends">友链</a>
-          <a href="/AngelaPage/about">关于</a>
-        </div>
-      </nav>
-    </header>
 
-    <main class={`main ${config.entranceAnimation?.enabled ? 'entrance-animate anim-type-' + (config.entranceAnimation?.type || 'slide-up') : ''}`}>
-      <slot />
-    </main>
+    <div class="page-layer">
+      <Header />
+      <main class="shell page-main" id="page-main">
+        <slot />
+      </main>
+      <Footer />
+    </div>
 
-    <footer class="footer">
-      <p>&copy; 2026 <a href="/AngelaPage/" style="color: inherit;">Angela</a>. All rights reserved.</p>
-    </footer>
+    <div class="page-transition-mask" id="page-transition-mask" aria-hidden="true"></div>
 
-    <!-- 页面切换圆形扩散遮罩 -->
-    <div class="page-transition-mask" id="page-transition-mask"></div>
+    <script is:inline>
+      (() => {
+        const storageKey = 'angela-theme';
+        const root = document.documentElement;
+        const saved = localStorage.getItem(storageKey);
+        const preferredDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const initialTheme = saved ?? (preferredDark ? 'dark' : 'light');
+        root.dataset.theme = initialTheme;
 
-    <script>
-      (function() {
-        // 读取鼠标跟随配置
-        const config = window.__bgConfig;
-        const cursorConfig = config?.cursorFollower || {
-          enabled: true,
-          size: 40,
-          hoverSize: 60,
-          borderColor: '#ffffff',
-          borderOpacity: 0.8,
-          fillColor: '#ffffff',
-          fillOpacity: 0.2,
-          blendMode: 'difference',
-          followSpeed: 0.15
-        };
+        const toggle = document.querySelector('[data-theme-toggle]');
+        if (!toggle) return;
 
-        // 鼠标跟随圆圈
-        const cursor = document.getElementById('cursor-follower');
-        
-        // 辅助函数：添加透明度到颜色
-        function addOpacity(hex, opacity) {
-          const r = parseInt(hex.slice(1, 3), 16);
-          const g = parseInt(hex.slice(3, 5), 16);
-          const b = parseInt(hex.slice(5, 7), 16);
-          return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-        }
-        
-        // 根据配置设置圆圈样式
-        if (cursor && cursorConfig.enabled) {
-          cursor.style.width = cursorConfig.size + 'px';
-          cursor.style.height = cursorConfig.size + 'px';
-          cursor.style.border = `2px solid ${addOpacity(cursorConfig.borderColor || '#ffffff', cursorConfig.borderOpacity || 0.8)}`;
-          cursor.style.background = 'transparent';
-          cursor.style.mixBlendMode = cursorConfig.blendMode || 'difference';
-          cursor.style.display = 'block';
-        } else if (cursor) {
-          cursor.style.display = 'none';
-        }
-
-        let mouseX = 0, mouseY = 0;
-        let cursorX = 0, cursorY = 0;
-        
-        document.addEventListener('mousemove', (e) => {
-          mouseX = e.clientX;
-          mouseY = e.clientY;
-        });
-        
-        // 鼠标跟随动画
-        function animateCursor() {
-          if (cursorConfig.enabled) {
-            const speed = cursorConfig.followSpeed || 0.15;
-            cursorX += (mouseX - cursorX) * speed;
-            cursorY += (mouseY - cursorY) * speed;
-            cursor.style.left = cursorX + 'px';
-            cursor.style.top = cursorY + 'px';
-          }
-          requestAnimationFrame(animateCursor);
-        }
-        animateCursor();
-
-        // 可交互元素检测
-        const interactiveSelectors = 'a, button, input, textarea, select, [role="button"], .clickable, .nav-links a, .btn';
-        document.addEventListener('mouseover', (e) => {
-          if (cursorConfig.enabled && e.target.closest(interactiveSelectors)) {
-            cursor.classList.add('hovering');
-            cursor.style.width = (cursorConfig.hoverSize || 60) + 'px';
-            cursor.style.height = (cursorConfig.hoverSize || 60) + 'px';
-            cursor.style.background = addOpacity(cursorConfig.fillColor || '#ffffff', cursorConfig.fillOpacity || 0.2);
-          }
-        });
-
-        document.addEventListener('mouseout', (e) => {
-          if (cursorConfig.enabled && e.target.closest(interactiveSelectors)) {
-            cursor.classList.remove('hovering');
-            cursor.style.width = cursorConfig.size + 'px';
-            cursor.style.height = cursorConfig.size + 'px';
-            cursor.style.background = 'transparent';
-          }
-        });
-
-        // 背景配置
-        if (!config || !config.enabled) return;
-
-        const background = document.getElementById('background');
-        const bgImage = document.getElementById('bg-image');
-        const gradients = document.querySelectorAll('.gradient');
-        
-        if (!background) return;
-
-        // 处理背景图片（支持多源）
-        if (config.type === 'image' && bgImage) {
-          const bgLoader = document.getElementById('bg-loader');
-          const progressCircle = document.querySelector('.progress-ring-circle');
-          const loaderConfig = config.bgLoader || { enabled: true, color: '#667eea', size: 60 };
-
-          // 获取所有图片源
-          const sources = config.image?.sources || (config.image?.url ? [config.image.url] : []);
-          const currentUrl = sources[0] || '';
-
-          if (!currentUrl) return;
-
-          // 尝试加载图片的函数
-          function tryLoadImage(urls, index) {
-            if (index >= urls.length) {
-              // 所有图片都加载失败，隐藏进度条
-              if (bgLoader) bgLoader.classList.remove('active');
-              return;
-            }
-
-            const url = urls[index];
-            const img = new Image();
-
-            img.onload = function() {
-              bgImage.style.backgroundImage = `url(${url})`;
-              bgImage.style.opacity = config.image.opacity || 1;
-              bgImage.style.backgroundSize = config.image.size || 'cover';
-              bgImage.style.backgroundPosition = config.image.position || 'center';
-              bgImage.style.backgroundRepeat = config.image.repeat || 'no-repeat';
-              if (bgLoader) bgLoader.classList.remove('active');
-            };
-
-            img.onerror = function() {
-              // 当前图片加载失败，尝试下一个
-              tryLoadImage(urls, index + 1);
-            };
-
-            if (loaderConfig.enabled && bgLoader && progressCircle) {
-              // 显示进度条
-              progressCircle.style.stroke = loaderConfig.color || '#667eea';
-              const size = loaderConfig.size || 60;
-              bgLoader.querySelector('svg').setAttribute('width', size);
-              bgLoader.querySelector('svg').setAttribute('height', size);
-              const radius = size / 2 - 6;
-              progressCircle.setAttribute('r', radius);
-              progressCircle.setAttribute('cx', size / 2);
-              progressCircle.setAttribute('cy', size / 2);
-              const circleLength = 2 * Math.PI * radius;
-              bgLoader.classList.add('active');
-              progressCircle.style.strokeDasharray = circleLength;
-              progressCircle.style.strokeDashoffset = circleLength;
-
-              // 模拟进度
-              let progress = 0;
-              const progressInterval = setInterval(() => {
-                progress += Math.random() * 30;
-                if (progress >= 90) {
-                  clearInterval(progressInterval);
-                } else {
-                  const offset = circleLength - (progress / 100) * circleLength;
-                  progressCircle.style.strokeDashoffset = offset;
-                }
-              }, 100);
-            }
-
-            img.src = url;
-          }
-
-          // 开始尝试加载
-          tryLoadImage(sources, 0);
-        }
-
-        // 处理渐变背景
-        if ((!config.type || config.type === 'gradient') && gradients.length > 0) {
-          // 设置渐变颜色
-          if (config.fallbackGradient?.enabled) {
-            if (gradients[0]) gradients[0].style.background = config.fallbackGradient.color1 || '#667eea';
-            if (gradients[1]) gradients[1].style.background = config.fallbackGradient.color2 || '#764ba2';
-            if (gradients[2]) gradients[2].style.background = config.fallbackGradient.color3 || '#f093fb';
-          }
-        }
-
-        const centerX = window.innerWidth / 2;
-        const centerY = window.innerHeight / 2;
-
-        // 鼠标交互处理
-        let targetX = 0, targetY = 0;
-        let currentX = 0, currentY = 0;
-        
-        const parallaxEnabled = config.mouseInteraction?.parallax?.enabled;
-        const parallaxStrength = parallaxEnabled ? (config.mouseInteraction.parallax.strength || 0.5) : 0;
-        
-        const zoomEnabled = config.mouseInteraction?.zoom?.enabled;
-        const zoomSensitivity = zoomEnabled ? (config.mouseInteraction.zoom.sensitivity || 1.0) : 0;
-
-        const panEnabled = config.mouseInteraction?.pan?.enabled;
-        const panStrength = panEnabled ? (config.mouseInteraction.pan.strength || 0.3) : 0;
-
-        document.addEventListener('mousemove', (e) => {
-          targetX = (e.clientX - centerX) / centerX;
-          targetY = (e.clientY - centerY) / centerY;
-        });
-
-        // 动画循环
-        function animate() {
-          currentX += (targetX - currentX) * 0.05;
-          currentY += (targetY - currentY) * 0.05;
-
-          // 处理背景图片
-          if (bgImage && config.type === 'image') {
-            let transform = '';
-
-            // 平移效果
-            if (panEnabled) {
-              const offsetX = currentX * 100 * panStrength;
-              const offsetY = currentY * 100 * panStrength;
-              transform += `translate(${offsetX}px, ${offsetY}px)`;
-            }
-            
-            // 缩放效果
-            if (zoomEnabled) {
-              const zoomFactor = 1 + (Math.abs(currentX) + Math.abs(currentY)) * 0.1 * zoomSensitivity;
-              transform += (transform ? ' ' : '') + `scale(${zoomFactor})`;
-            }
-            
-            if (transform) {
-              bgImage.style.transform = transform;
-            }
-          }
-
-          // 处理渐变球
-          if (gradients.length > 0) {
-            gradients.forEach((el, index) => {
-              // 视差效果：不同层以不同速度移动
-              const parallaxMultiplier = (index + 1) * 0.3;
-              
-              const offsetX = currentX * 50 * parallaxStrength * parallaxMultiplier;
-              const offsetY = currentY * 50 * parallaxStrength * parallaxMultiplier;
-
-              // 缩放效果
-              const zoomFactor = 1 + (currentX * currentY * 0.1 * zoomSensitivity);
-
-              el.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) scale(${zoomFactor})`;
-            });
-          }
-
-          requestAnimationFrame(animate);
-        }
-
-        animate();
-      })();
-
-      // 页面切换圆形扩散动画（圆形内显示新页面）
-      (function() {
-        const transitionMask = document.getElementById('page-transition-mask');
-        if (!transitionMask) return;
-
-        const transitionConfig = window.__bgConfig?.pageTransition || {
-          enabled: true,
-          duration: 600,
-          color: '#0f0f23'
-        };
-
-        if (!transitionConfig.enabled) return;
-
-        // 设置遮罩颜色
-        transitionMask.style.background = transitionConfig.color || '#0f0f23';
-
-        // 拦截链接点击
-        document.addEventListener('click', function(e) {
-          // 查找最近的链接元素
-          const link = e.target.closest('a');
-          if (!link) return;
-
-          // 排除外部链接和新窗口链接
-          const href = link.getAttribute('href');
-          if (!href) return;
-          if (href.startsWith('http') && !href.includes(window.location.host)) return;
-          if (link.target === '_blank') return;
-          if (link.hasAttribute('download')) return;
-
-          // 排除锚点链接（同一页面跳转）
-          if (href.startsWith('#')) return;
-
-          // 排除当前页面的链接
-          const currentPath = window.location.pathname;
-          const linkPath = href.split('?')[0].split('#')[0];
-          if (currentPath === linkPath || currentPath.endsWith(linkPath)) return;
-
-          // 阻止默认行为
-          e.preventDefault();
-          e.stopPropagation();
-
-          // 设置点击位置 CSS 变量
-          const clickX = e.clientX;
-          const clickY = e.clientY;
-          document.documentElement.style.setProperty('--click-x', clickX + 'px');
-          document.documentElement.style.setProperty('--click-y', clickY + 'px');
-          transitionMask.style.setProperty('--click-x', clickX + 'px');
-          transitionMask.style.setProperty('--click-y', clickY + 'px');
-
-          // 使用 View Transitions API 实现圆形内显示新页面
-          if (document.startViewTransition) {
-            // 设置动画时长
-            const duration = transitionConfig.duration || 600;
-            document.documentElement.style.setProperty('--transition-duration', duration + 'ms');
-
-            // 添加 class 用于 CSS 选择器
-            document.documentElement.classList.add('page-transition-active');
-
-            // 开始 View Transition
-            document.startViewTransition(() => {
-              // 跳转到新页面
-              window.location.href = href;
-            });
-          } else {
-            // 兼容不支持 View Transitions 的浏览器
-            transitionMask.classList.add('active');
-            const duration = transitionConfig.duration || 600;
-            setTimeout(() => {
-              window.location.href = href;
-            }, duration);
-          }
-        }, false);
-
-        // 处理 View Transition 结束
-        document.addEventListener('transitionrun', (e) => {
-          if (e.viewTransition) {
-            e.viewTransition.finished.then(() => {
-              document.documentElement.classList.remove('page-transition-active');
-              transitionMask.classList.remove('active');
-            });
-          }
-        });
-
-        // 处理浏览器前进/后退
-        window.addEventListener('pageshow', function() {
-          transitionMask.classList.remove('active');
-          document.documentElement.classList.remove('page-transition-active');
+        toggle.addEventListener('click', () => {
+          const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+          root.dataset.theme = next;
+          localStorage.setItem(storageKey, next);
         });
       })();
     </script>
 
-    <!-- 注册 Service Worker -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/AngelaPage/sw.js')
-            .then((registration) => {
-              console.log('SW registered:', registration);
-            })
-            .catch((error) => {
-              console.log('SW registration failed:', error);
-            });
+    <script is:inline>
+      (() => {
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function deepMerge(target, source) {
+          if (!source || typeof source !== 'object') return target;
+          const out = { ...(target || {}) };
+          for (const key of Object.keys(source)) {
+            const srcVal = source[key];
+            const tarVal = out[key];
+            if (srcVal && typeof srcVal === 'object' && !Array.isArray(srcVal)) {
+              out[key] = deepMerge(tarVal && typeof tarVal === 'object' ? tarVal : {}, srcVal);
+            } else {
+              out[key] = srcVal;
+            }
+          }
+          return out;
+        }
+
+        function pickPublishGuiConfig() {
+          const keys = [
+            'backgroundConfig',
+            'bgConfig',
+            'angelaBgConfig',
+            'publishGuiBackgroundConfig',
+            'publish-gui-background-config'
+          ];
+
+          for (const key of keys) {
+            const raw = localStorage.getItem(key);
+            if (!raw) continue;
+            try {
+              const parsed = JSON.parse(raw);
+              if (parsed && typeof parsed === 'object') return parsed;
+            } catch {}
+          }
+
+          if (window.__publishGuiConfig?.backgroundConfig) return window.__publishGuiConfig.backgroundConfig;
+          if (window.__bgConfig) return window.__bgConfig;
+          return null;
+        }
+
+        function hexToRgba(hex, alpha) {
+          if (!hex || typeof hex !== 'string' || !hex.startsWith('#') || hex.length < 7) return `rgba(255,255,255,${alpha})`;
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        const defaultConfig = window.__defaultBgConfig || {};
+        const customConfig = pickPublishGuiConfig();
+        const config = deepMerge(defaultConfig, customConfig || {});
+
+        const cursor = document.getElementById('cursor-follower');
+        const background = document.getElementById('background');
+        const bgImage = document.getElementById('bg-image');
+        const gradients = Array.from(document.querySelectorAll('.gradient'));
+        const bgLoader = document.getElementById('bg-loader');
+        const progressCircle = document.querySelector('.progress-ring-circle');
+        const pageMain = document.getElementById('page-main');
+        const transitionMask = document.getElementById('page-transition-mask');
+
+        const entrance = config.entranceAnimation || {};
+        if (entrance.enabled && pageMain && !prefersReducedMotion) {
+          const duration = entrance.duration ?? 0.8;
+          const delay = entrance.delay ?? 0;
+          const easing = entrance.easing || 'ease-out';
+          pageMain.style.animation = `entrance-${entrance.type || 'slide-up'} ${duration}s ${easing} ${delay}s both`;
+        }
+
+        if (!config.enabled) {
+          if (background) background.style.display = 'none';
+          if (cursor) cursor.style.display = 'none';
+          return;
+        }
+
+        // Cursor follower
+        const cursorConfig = config.cursorFollower || {};
+        if (!cursor || !cursorConfig.enabled || prefersReducedMotion || window.innerWidth <= 780) {
+          if (cursor) cursor.style.display = 'none';
+        } else {
+          const size = cursorConfig.size ?? 24;
+          const hoverSize = cursorConfig.hoverSize ?? 48;
+          cursor.style.display = 'block';
+          cursor.style.width = `${size}px`;
+          cursor.style.height = `${size}px`;
+          cursor.style.border = `2px solid ${hexToRgba(cursorConfig.borderColor || '#ffffff', cursorConfig.borderOpacity ?? 0.8)}`;
+          cursor.style.mixBlendMode = cursorConfig.blendMode === 'none' ? 'normal' : (cursorConfig.blendMode || 'difference');
+
+          let mouseX = window.innerWidth / 2;
+          let mouseY = window.innerHeight / 2;
+          let currentX = mouseX;
+          let currentY = mouseY;
+          const speed = cursorConfig.followSpeed ?? 0.13;
+
+          document.addEventListener('mousemove', (event) => {
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+          });
+
+          const interactive = 'a,button,input,textarea,select,[role="button"],.btn';
+          document.addEventListener('mouseover', (event) => {
+            if (event.target?.closest?.(interactive)) {
+              cursor.style.width = `${hoverSize}px`;
+              cursor.style.height = `${hoverSize}px`;
+              cursor.style.background = hexToRgba(cursorConfig.fillColor || '#ffffff', cursorConfig.fillOpacity ?? 0.18);
+            }
+          });
+
+          document.addEventListener('mouseout', (event) => {
+            if (event.target?.closest?.(interactive)) {
+              cursor.style.width = `${size}px`;
+              cursor.style.height = `${size}px`;
+              cursor.style.background = 'transparent';
+            }
+          });
+
+          const animateCursor = () => {
+            currentX += (mouseX - currentX) * speed;
+            currentY += (mouseY - currentY) * speed;
+            cursor.style.left = `${currentX}px`;
+            cursor.style.top = `${currentY}px`;
+            requestAnimationFrame(animateCursor);
+          };
+          animateCursor();
+        }
+
+        const isImageMode = config.type === 'image';
+        const gradientEnabled = !!config.fallbackGradient?.enabled;
+
+        if (bgImage) bgImage.style.display = isImageMode ? 'block' : 'none';
+
+        const showGradients = !isImageMode || gradientEnabled;
+        gradients.forEach((el) => {
+          el.style.display = showGradients ? 'block' : 'none';
         });
-      }
+
+        // Gradient colors (also used as fallback when image fails)
+        if (showGradients) {
+          const colors = [
+            config.fallbackGradient?.color1 || '#667eea',
+            config.fallbackGradient?.color2 || '#764ba2',
+            config.fallbackGradient?.color3 || '#f093fb'
+          ];
+          gradients.forEach((el, idx) => {
+            el.style.background = colors[idx] || colors[0];
+          });
+        }
+
+        // Image background loader / fallback
+        if (isImageMode && bgImage) {
+          const sources = config.image?.sources || (config.image?.url ? [config.image.url] : []);
+          const loaderConfig = config.bgLoader || {};
+          let loaderTimer = null;
+
+          function setLoaderProgress(progress) {
+            if (!progressCircle || !bgLoader) return;
+            const size = loaderConfig.size || 60;
+            const radius = size / 2 - 6;
+            const circumference = 2 * Math.PI * radius;
+            bgLoader.querySelector('svg')?.setAttribute('width', String(size));
+            bgLoader.querySelector('svg')?.setAttribute('height', String(size));
+            progressCircle.setAttribute('r', String(radius));
+            progressCircle.setAttribute('cx', String(size / 2));
+            progressCircle.setAttribute('cy', String(size / 2));
+            progressCircle.style.stroke = loaderConfig.color || '#667eea';
+            progressCircle.style.strokeDasharray = String(circumference);
+            progressCircle.style.strokeDashoffset = String(circumference - circumference * progress);
+          }
+
+          const stopLoader = () => {
+            if (loaderTimer) {
+              clearInterval(loaderTimer);
+              loaderTimer = null;
+            }
+            if (bgLoader) bgLoader.classList.remove('active');
+          };
+
+          const loadImage = (index) => {
+            if (!sources[index]) {
+              stopLoader();
+              return;
+            }
+
+            const image = new Image();
+            image.onload = () => {
+              bgImage.style.backgroundImage = `url(${sources[index]})`;
+              bgImage.style.opacity = String(config.image?.opacity ?? 0.12);
+              bgImage.style.backgroundSize = config.image?.size || 'cover';
+              bgImage.style.backgroundPosition = config.image?.position || 'center';
+              bgImage.style.backgroundRepeat = config.image?.repeat || 'no-repeat';
+              stopLoader();
+            };
+            image.onerror = () => {
+              loadImage(index + 1);
+            };
+            image.src = sources[index];
+          };
+
+          if (loaderConfig.enabled && bgLoader) {
+            bgLoader.classList.add('active');
+            let fake = 0;
+            loaderTimer = setInterval(() => {
+              fake = Math.min(fake + Math.random() * 0.2, 0.92);
+              setLoaderProgress(fake);
+              if (fake >= 0.92) {
+                clearInterval(loaderTimer);
+                loaderTimer = null;
+              }
+            }, 120);
+          }
+
+          loadImage(0);
+        }
+
+        // Background mouse interaction
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        let targetX = 0;
+        let targetY = 0;
+        let currentX = 0;
+        let currentY = 0;
+
+        const parallaxEnabled = !!config.mouseInteraction?.parallax?.enabled;
+        const parallaxStrength = config.mouseInteraction?.parallax?.strength ?? 0.35;
+        const zoomEnabled = !!config.mouseInteraction?.zoom?.enabled;
+        const zoomSensitivity = config.mouseInteraction?.zoom?.sensitivity ?? 0.4;
+        const panEnabled = !!config.mouseInteraction?.pan?.enabled;
+        const panStrength = config.mouseInteraction?.pan?.strength ?? 0.3;
+
+        document.addEventListener('mousemove', (event) => {
+          targetX = (event.clientX - centerX) / centerX;
+          targetY = (event.clientY - centerY) / centerY;
+        });
+
+        const animateBg = () => {
+          currentX += (targetX - currentX) * 0.05;
+          currentY += (targetY - currentY) * 0.05;
+
+          if (isImageMode && bgImage) {
+            let transform = '';
+            if (panEnabled) {
+              transform += `translate(${currentX * 80 * panStrength}px, ${currentY * 80 * panStrength}px)`;
+            }
+            if (zoomEnabled) {
+              const zoom = 1 + (Math.abs(currentX) + Math.abs(currentY)) * 0.08 * zoomSensitivity;
+              transform += `${transform ? ' ' : ''}scale(${zoom})`;
+            }
+            bgImage.style.transform = transform || 'translate(0,0) scale(1)';
+          }
+
+          if (showGradients && gradients.length > 0 && parallaxEnabled) {
+            gradients.forEach((el, idx) => {
+              const depth = (idx + 1) * 0.32;
+              const x = currentX * 48 * parallaxStrength * depth;
+              const y = currentY * 48 * parallaxStrength * depth;
+              const zoom = 1 + currentX * currentY * 0.09 * zoomSensitivity;
+              el.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${zoom})`;
+            });
+          }
+
+          requestAnimationFrame(animateBg);
+        };
+
+        if (!prefersReducedMotion) animateBg();
+
+        // Page transition mask
+        const transition = config.pageTransition || {};
+        if (transition.enabled && transitionMask && !prefersReducedMotion) {
+          const duration = transition.duration ?? 600;
+          const color = transition.color || '#0f0f23';
+          transitionMask.style.background = color;
+
+          document.addEventListener('click', (event) => {
+            const link = event.target?.closest?.('a');
+            if (!link) return;
+            if (link.target === '_blank' || link.hasAttribute('download')) return;
+            const href = link.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+
+            const nextUrl = new URL(link.href, window.location.href);
+            if (nextUrl.origin !== window.location.origin) return;
+
+            event.preventDefault();
+            const x = event.clientX;
+            const y = event.clientY;
+            transitionMask.style.setProperty('--x', `${x}px`);
+            transitionMask.style.setProperty('--y', `${y}px`);
+            transitionMask.style.setProperty('--duration', `${duration}ms`);
+            transitionMask.classList.add('active');
+
+            setTimeout(() => {
+              window.location.href = nextUrl.href;
+            }, Math.max(120, Math.floor(duration * 0.7)));
+          });
+        }
+      })();
     </script>
   </body>
 </html>
 
 <style is:global>
   :root {
-    --bg-primary: #0f0f23;
-    --bg-secondary: rgba(255, 255, 255, 0.05);
-    --text-primary: #ffffff;
-    --text-secondary: rgba(255, 255, 255, 0.7);
-    --accent: #667eea;
-    --accent-secondary: #764ba2;
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
+    --bg: #f6f7fb;
+    --surface: #eaedf8;
+    --card: rgba(255, 255, 255, 0.76);
+    --border: #d9deef;
+    --text-primary: #13172a;
+    --text-secondary: #4f5877;
+    --text-muted: #7f88a8;
+    --accent: #6366f1;
   }
 
-  * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+  :root[data-theme='dark'] {
+    --bg: #0d1020;
+    --surface: #161a31;
+    --card: rgba(22, 27, 47, 0.78);
+    --border: #2b3250;
+    --text-primary: #e8ebff;
+    --text-secondary: #b6bce0;
+    --text-muted: #8f96bb;
+    --accent: #8b9bff;
   }
 
-  html {
-    font-family: 'Noto Sans SC', sans-serif;
-    scroll-behavior: smooth;
-  }
+  * { box-sizing: border-box; }
 
   body {
-    min-height: 100vh;
+    margin: 0;
+    font-family: 'Noto Sans SC', system-ui, sans-serif;
+    background: var(--bg);
     color: var(--text-primary);
-    background: var(--bg-primary);
-    line-height: 1.6;
-    overflow-x: hidden;
   }
 
   .background {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: -1;
+    inset: 0;
+    z-index: -2;
     overflow: hidden;
   }
 
   .bg-image {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: -3%;
+    opacity: 0.12;
+    transition: opacity 0.3s ease;
     will-change: transform;
-    transition: transform 0.1s ease-out;
   }
 
   .gradient {
     position: absolute;
+    width: clamp(380px, 46vw, 660px);
+    aspect-ratio: 1;
+    top: 50%;
+    left: 50%;
     border-radius: 50%;
+    filter: blur(110px);
+    opacity: 0.17;
     transform: translate(-50%, -50%);
     will-change: transform;
   }
 
-  /* 背景加载圆形进度条 */
+  .gradient-1 { left: 28%; top: 36%; }
+  .gradient-2 { left: 72%; top: 38%; }
+  .gradient-3 { left: 50%; top: 72%; }
+
   .bg-loader {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bg-loader.active { display: flex; }
+  .progress-ring { transform: rotate(-90deg); }
+
+  .cursor-follower {
     position: fixed;
-    top: 50%;
-    left: 50%;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 60;
+    border-radius: 50%;
     transform: translate(-50%, -50%);
-    z-index: 9998;
+    transition: width 0.2s ease, height 0.2s ease, background 0.2s ease;
     display: none;
   }
 
-  .bg-loader.active {
-    display: block;
-  }
-
-  .progress-ring {
-    transform: rotate(-90deg);
-  }
-
-  .progress-ring-circle {
-    stroke-dasharray: 163.36;
-    stroke-dashoffset: 163.36;
-    transition: stroke-dashoffset 0.3s ease;
-    stroke-linecap: round;
-  }
-
-  /* 鼠标跟随圆圈 */
-  .cursor-follower {
-    position: fixed;
-    width: 40px;
-    height: 40px;
-    border: 2px solid rgba(255, 255, 255, 0.8);
-    border-radius: 50%;
-    pointer-events: none;
-    z-index: 9999;
-    transform: translate(-50%, -50%);
-    transition: width 0.3s ease, height 0.3s ease, background 0.3s ease, border 0.3s ease;
-    mix-blend-mode: difference;
-  }
-
-  .cursor-follower.hovering {
-    /* background 由 JavaScript 控制 */
-  }
-
-  /* 可交互元素的反色效果 */
-  a, button, input, textarea, select, [role="button"], .clickable {
-    cursor: none;
-  }
-
-  a:hover, button:hover, [role="button"]:hover, .clickable:hover {
-    filter: invert(1);
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translate(-50%, -50%) translate(0, 0) scale(1); }
-    25% { transform: translate(-50%, -50%) translate(30px, -30px) scale(1.05); }
-    50% { transform: translate(-50%, -50%) translate(-20px, 20px) scale(0.95); }
-    75% { transform: translate(-50%, -50%) translate(-30px, -20px) scale(1.02); }
-  }
-
-  .header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    padding: 1rem 2rem;
-  }
-
-  .nav {
-    max-width: 1200px;
-    margin: 0 auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 2rem;
-    background: var(--glass-bg);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
-    border-radius: 16px;
-  }
-
-  .logo {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--text-primary);
-    text-decoration: none;
-    background: linear-gradient(135deg, var(--accent), var(--accent-secondary));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  .nav-links {
-    display: flex;
-    gap: 2rem;
-  }
-
-  .nav-links a {
-    color: var(--text-secondary);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.3s ease;
+  .page-layer {
     position: relative;
+    z-index: 1;
+    min-height: 100vh;
   }
 
-  .nav-links a::after {
-    content: '';
-    position: absolute;
-    bottom: -4px;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background: linear-gradient(90deg, var(--accent), var(--accent-secondary));
-    transition: width 0.3s ease;
-  }
-
-  .nav-links a:hover {
-    color: var(--text-primary);
-  }
-
-  .nav-links a:hover::after {
-    width: 100%;
-  }
-
-  .main {
-    max-width: 1200px;
+  .shell {
+    max-width: 1140px;
     margin: 0 auto;
-    padding: 2rem;
-    min-height: calc(100vh - 200px);
+    padding-inline: 1rem;
   }
 
-  .footer {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
+  .page-main {
+    min-height: calc(100vh - 150px);
+    padding-top: 2rem;
   }
 
-  /* 页面切换圆形扩散效果 */
   .page-transition-mask {
+    --x: 50vw;
+    --y: 50vh;
+    --duration: 600ms;
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 10000;
+    inset: 0;
     pointer-events: none;
+    z-index: 999;
     opacity: 0;
-    background: var(--bg-primary);
+    clip-path: circle(0 at var(--x) var(--y));
   }
 
   .page-transition-mask.active {
-    animation: circle-expand 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    pointer-events: auto;
+    animation: page-mask-expand var(--duration) ease-out both;
   }
 
-  @keyframes circle-expand {
-    0% {
+  @keyframes page-mask-expand {
+    from {
       opacity: 1;
-      clip-path: circle(0% at var(--click-x) var(--click-y));
+      clip-path: circle(0 at var(--x) var(--y));
     }
-    100% {
+    to {
       opacity: 1;
-      clip-path: circle(150% at var(--click-x) var(--click-y));
+      clip-path: circle(160vmax at var(--x) var(--y));
     }
   }
 
-  /* View Transitions 圆形扩展效果 */
-  :root.page-transition-active {
-    --click-x: var(--click-x, 50%);
-    --click-y: var(--click-y, 50%);
-    --transition-duration: 600ms;
+  @keyframes entrance-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
-  ::view-transition-old(root) {
-    animation: vt-old-expand var(--transition-duration, 600ms) cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  @keyframes entrance-slide-up {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  ::view-transition-new(root) {
-    animation: vt-new-expand var(--transition-duration, 600ms) cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  @keyframes entrance-slide-down {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
-  @keyframes vt-old-expand {
-    0% {
-      clip-path: circle(0% at var(--click-x) var(--click-y));
-    }
-    100% {
-      clip-path: circle(150% at var(--click-x) var(--click-y));
-    }
+  @keyframes entrance-zoom-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
   }
 
-  @keyframes vt-new-expand {
-    0% {
-      clip-path: circle(0% at var(--click-x) var(--click-y));
-    }
-    100% {
-      clip-path: circle(150% at var(--click-x) var(--click-y));
-    }
+  @media (max-width: 780px) {
+    .cursor-follower { display: none !important; }
   }
 
-  /* 备用遮罩动画 */
-  .page-transition-mask.active {
-    animation: circle-expand var(--transition-duration, 600ms) cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    pointer-events: auto;
-  }
-
-  @keyframes circle-expand {
-    0% {
-      opacity: 1;
-      clip-path: circle(0% at var(--click-x) var(--click-y));
-    }
-    100% {
-      opacity: 1;
-      clip-path: circle(150% at var(--click-x) var(--click-y));
-    }
-  }
-
-  @media (max-width: 768px) {
-    .nav {
-      flex-direction: column;
-      gap: 1rem;
-      padding: 1rem;
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
     }
 
-    .nav-links {
-      gap: 1rem;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .main {
-      padding: 1rem;
-    }
+    .cursor-follower { display: none !important; }
   }
 </style>
