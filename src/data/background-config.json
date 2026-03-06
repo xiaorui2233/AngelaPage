@@ -2,13 +2,14 @@
   "enabled": true,
   "type": "image",
   "image": {
-    "url": "https://images.alphacoders.com/114/thumb-1920-1145870.png",
+    "url": "https://xiaorui2233.github.io/AngelaPage/images/background.png",
     "sources": [
+      "https://xiaorui2233.github.io/AngelaPage/images/background.png",
       "https://images.alphacoders.com/114/thumb-1920-1145870.png",
       "/AngelaPage/images/background.png",
       "https://github.com/xiaorui2233/AngelaPage/blob/main/images/background.png?raw=true"
     ],
-    "opacity": 0.1,
+    "opacity": 0.65,
     "size": "cover",
     "position": "center",
     "repeat": "no-repeat"
@@ -42,7 +43,7 @@
     "type": "slide-up",
     "duration": 0.8,
     "delay": 0.2,
-    "easing": "cubic-bezier(0.68, -0.55, 0.265, 1.55)"
+    "easing": "ease-out"
   },
   "cursorFollower": {
     "enabled": true,
@@ -51,13 +52,13 @@
     "borderColor": "#4b98d2",
     "borderOpacity": 0.8,
     "fillColor": "#df5d5d",
-    "fillOpacity": 0.1,
+    "fillOpacity": 0.18,
     "blendMode": "difference",
-    "followSpeed": 0.11
+    "followSpeed": 0.13
   },
   "pageTransition": {
     "enabled": true,
-    "duration": 850,
+    "duration": 750,
     "color": "#2481f9"
   },
   "bgLoader": {
