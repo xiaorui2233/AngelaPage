@@ -2,9 +2,9 @@
   "enabled": true,
   "type": "image",
   "image": {
-    "url": "/AngelaPage/images/background.png",
+    "url": "https://xiaorui2233.github.io/AngelaPage/images/background.png",
     "sources": [
-      "/AngelaPage/images/background.png",
+      "https://xiaorui2233.github.io/AngelaPage/images/background.png",
       "https://images.alphacoders.com/114/thumb-1920-1145870.png",
       "/AngelaPage/images/background.png",
       "https://github.com/xiaorui2233/AngelaPage/blob/main/images/background.png?raw=true"
