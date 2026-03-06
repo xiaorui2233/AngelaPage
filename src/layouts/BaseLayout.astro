@@ -1,6 +1,7 @@
 ---
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import backgroundConfig from '../data/background-config.json';
 
 interface Props {
   title: string;
@@ -8,6 +9,7 @@ interface Props {
 }
 
 const { title, description = 'Angela 的个人技术博客' } = Astro.props;
+const config = backgroundConfig;
 ---
 
 <!doctype html>
@@ -21,13 +23,34 @@ const { title, description = 'Angela 的个人技术博客' } = Astro.props;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+    <script define:vars={{ config }}>
+      window.__defaultBgConfig = config;
+    </script>
   </head>
   <body>
-    <Header />
-    <main class="shell page-main">
-      <slot />
-    </main>
-    <Footer />
+    <div class="cursor-follower" id="cursor-follower" aria-hidden="true"></div>
+
+    <div class="background" id="background" aria-hidden="true">
+      <div class="bg-image" id="bg-image"></div>
+      <div class="gradient gradient-1"></div>
+      <div class="gradient gradient-2"></div>
+      <div class="gradient gradient-3"></div>
+      <div class="bg-loader" id="bg-loader">
+        <svg class="progress-ring" width="60" height="60">
+          <circle class="progress-ring-circle" stroke="#667eea" stroke-width="4" fill="transparent" r="26" cx="30" cy="30" />
+        </svg>
+      </div>
+    </div>
+
+    <div class="page-layer">
+      <Header />
+      <main class="shell page-main" id="page-main">
+        <slot />
+      </main>
+      <Footer />
+    </div>
+
+    <div class="page-transition-mask" id="page-transition-mask" aria-hidden="true"></div>
 
     <script is:inline>
       (() => {
@@ -48,6 +71,306 @@ const { title, description = 'Angela 的个人技术博客' } = Astro.props;
         });
       })();
     </script>
+
+    <script is:inline>
+      (() => {
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        function deepMerge(target, source) {
+          if (!source || typeof source !== 'object') return target;
+          const out = { ...(target || {}) };
+          for (const key of Object.keys(source)) {
+            const srcVal = source[key];
+            const tarVal = out[key];
+            if (srcVal && typeof srcVal === 'object' && !Array.isArray(srcVal)) {
+              out[key] = deepMerge(tarVal && typeof tarVal === 'object' ? tarVal : {}, srcVal);
+            } else {
+              out[key] = srcVal;
+            }
+          }
+          return out;
+        }
+
+        function pickPublishGuiConfig() {
+          const keys = [
+            'backgroundConfig',
+            'bgConfig',
+            'angelaBgConfig',
+            'publishGuiBackgroundConfig',
+            'publish-gui-background-config'
+          ];
+
+          for (const key of keys) {
+            const raw = localStorage.getItem(key);
+            if (!raw) continue;
+            try {
+              const parsed = JSON.parse(raw);
+              if (parsed && typeof parsed === 'object') return parsed;
+            } catch {}
+          }
+
+          if (window.__publishGuiConfig?.backgroundConfig) return window.__publishGuiConfig.backgroundConfig;
+          if (window.__bgConfig) return window.__bgConfig;
+          return null;
+        }
+
+        function hexToRgba(hex, alpha) {
+          if (!hex || typeof hex !== 'string' || !hex.startsWith('#') || hex.length < 7) return `rgba(255,255,255,${alpha})`;
+          const r = parseInt(hex.slice(1, 3), 16);
+          const g = parseInt(hex.slice(3, 5), 16);
+          const b = parseInt(hex.slice(5, 7), 16);
+          return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        const defaultConfig = window.__defaultBgConfig || {};
+        const customConfig = pickPublishGuiConfig();
+        const config = deepMerge(defaultConfig, customConfig || {});
+
+        const cursor = document.getElementById('cursor-follower');
+        const background = document.getElementById('background');
+        const bgImage = document.getElementById('bg-image');
+        const gradients = Array.from(document.querySelectorAll('.gradient'));
+        const bgLoader = document.getElementById('bg-loader');
+        const progressCircle = document.querySelector('.progress-ring-circle');
+        const pageMain = document.getElementById('page-main');
+        const transitionMask = document.getElementById('page-transition-mask');
+
+        const entrance = config.entranceAnimation || {};
+        if (entrance.enabled && pageMain && !prefersReducedMotion) {
+          const duration = entrance.duration ?? 0.8;
+          const delay = entrance.delay ?? 0;
+          const easing = entrance.easing || 'ease-out';
+          pageMain.style.animation = `entrance-${entrance.type || 'slide-up'} ${duration}s ${easing} ${delay}s both`;
+        }
+
+        if (!config.enabled) {
+          if (background) background.style.display = 'none';
+          if (cursor) cursor.style.display = 'none';
+          return;
+        }
+
+        // Cursor follower
+        const cursorConfig = config.cursorFollower || {};
+        if (!cursor || !cursorConfig.enabled || prefersReducedMotion || window.innerWidth <= 780) {
+          if (cursor) cursor.style.display = 'none';
+        } else {
+          const size = cursorConfig.size ?? 24;
+          const hoverSize = cursorConfig.hoverSize ?? 48;
+          cursor.style.display = 'block';
+          cursor.style.width = `${size}px`;
+          cursor.style.height = `${size}px`;
+          cursor.style.border = `2px solid ${hexToRgba(cursorConfig.borderColor || '#ffffff', cursorConfig.borderOpacity ?? 0.8)}`;
+          cursor.style.mixBlendMode = cursorConfig.blendMode === 'none' ? 'normal' : (cursorConfig.blendMode || 'difference');
+
+          let mouseX = window.innerWidth / 2;
+          let mouseY = window.innerHeight / 2;
+          let currentX = mouseX;
+          let currentY = mouseY;
+          const speed = cursorConfig.followSpeed ?? 0.13;
+
+          document.addEventListener('mousemove', (event) => {
+            mouseX = event.clientX;
+            mouseY = event.clientY;
+          });
+
+          const interactive = 'a,button,input,textarea,select,[role="button"],.btn';
+          document.addEventListener('mouseover', (event) => {
+            if (event.target?.closest?.(interactive)) {
+              cursor.style.width = `${hoverSize}px`;
+              cursor.style.height = `${hoverSize}px`;
+              cursor.style.background = hexToRgba(cursorConfig.fillColor || '#ffffff', cursorConfig.fillOpacity ?? 0.18);
+            }
+          });
+
+          document.addEventListener('mouseout', (event) => {
+            if (event.target?.closest?.(interactive)) {
+              cursor.style.width = `${size}px`;
+              cursor.style.height = `${size}px`;
+              cursor.style.background = 'transparent';
+            }
+          });
+
+          const animateCursor = () => {
+            currentX += (mouseX - currentX) * speed;
+            currentY += (mouseY - currentY) * speed;
+            cursor.style.left = `${currentX}px`;
+            cursor.style.top = `${currentY}px`;
+            requestAnimationFrame(animateCursor);
+          };
+          animateCursor();
+        }
+
+        const isImageMode = config.type === 'image';
+        const gradientEnabled = !!config.fallbackGradient?.enabled;
+
+        if (bgImage) bgImage.style.display = isImageMode ? 'block' : 'none';
+
+        const showGradients = !isImageMode || gradientEnabled;
+        gradients.forEach((el) => {
+          el.style.display = showGradients ? 'block' : 'none';
+        });
+
+        // Gradient colors (also used as fallback when image fails)
+        if (showGradients) {
+          const colors = [
+            config.fallbackGradient?.color1 || '#667eea',
+            config.fallbackGradient?.color2 || '#764ba2',
+            config.fallbackGradient?.color3 || '#f093fb'
+          ];
+          gradients.forEach((el, idx) => {
+            el.style.background = colors[idx] || colors[0];
+          });
+        }
+
+        // Image background loader / fallback
+        if (isImageMode && bgImage) {
+          const sources = config.image?.sources || (config.image?.url ? [config.image.url] : []);
+          const loaderConfig = config.bgLoader || {};
+          let loaderTimer = null;
+
+          function setLoaderProgress(progress) {
+            if (!progressCircle || !bgLoader) return;
+            const size = loaderConfig.size || 60;
+            const radius = size / 2 - 6;
+            const circumference = 2 * Math.PI * radius;
+            bgLoader.querySelector('svg')?.setAttribute('width', String(size));
+            bgLoader.querySelector('svg')?.setAttribute('height', String(size));
+            progressCircle.setAttribute('r', String(radius));
+            progressCircle.setAttribute('cx', String(size / 2));
+            progressCircle.setAttribute('cy', String(size / 2));
+            progressCircle.style.stroke = loaderConfig.color || '#667eea';
+            progressCircle.style.strokeDasharray = String(circumference);
+            progressCircle.style.strokeDashoffset = String(circumference - circumference * progress);
+          }
+
+          const stopLoader = () => {
+            if (loaderTimer) {
+              clearInterval(loaderTimer);
+              loaderTimer = null;
+            }
+            if (bgLoader) bgLoader.classList.remove('active');
+          };
+
+          const loadImage = (index) => {
+            if (!sources[index]) {
+              stopLoader();
+              return;
+            }
+
+            const image = new Image();
+            image.onload = () => {
+              bgImage.style.backgroundImage = `url(${sources[index]})`;
+              bgImage.style.opacity = String(config.image?.opacity ?? 0.12);
+              bgImage.style.backgroundSize = config.image?.size || 'cover';
+              bgImage.style.backgroundPosition = config.image?.position || 'center';
+              bgImage.style.backgroundRepeat = config.image?.repeat || 'no-repeat';
+              stopLoader();
+            };
+            image.onerror = () => {
+              loadImage(index + 1);
+            };
+            image.src = sources[index];
+          };
+
+          if (loaderConfig.enabled && bgLoader) {
+            bgLoader.classList.add('active');
+            let fake = 0;
+            loaderTimer = setInterval(() => {
+              fake = Math.min(fake + Math.random() * 0.2, 0.92);
+              setLoaderProgress(fake);
+              if (fake >= 0.92) {
+                clearInterval(loaderTimer);
+                loaderTimer = null;
+              }
+            }, 120);
+          }
+
+          loadImage(0);
+        }
+
+        // Background mouse interaction
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight / 2;
+        let targetX = 0;
+        let targetY = 0;
+        let currentX = 0;
+        let currentY = 0;
+
+        const parallaxEnabled = !!config.mouseInteraction?.parallax?.enabled;
+        const parallaxStrength = config.mouseInteraction?.parallax?.strength ?? 0.35;
+        const zoomEnabled = !!config.mouseInteraction?.zoom?.enabled;
+        const zoomSensitivity = config.mouseInteraction?.zoom?.sensitivity ?? 0.4;
+        const panEnabled = !!config.mouseInteraction?.pan?.enabled;
+        const panStrength = config.mouseInteraction?.pan?.strength ?? 0.3;
+
+        document.addEventListener('mousemove', (event) => {
+          targetX = (event.clientX - centerX) / centerX;
+          targetY = (event.clientY - centerY) / centerY;
+        });
+
+        const animateBg = () => {
+          currentX += (targetX - currentX) * 0.05;
+          currentY += (targetY - currentY) * 0.05;
+
+          if (isImageMode && bgImage) {
+            let transform = '';
+            if (panEnabled) {
+              transform += `translate(${currentX * 80 * panStrength}px, ${currentY * 80 * panStrength}px)`;
+            }
+            if (zoomEnabled) {
+              const zoom = 1 + (Math.abs(currentX) + Math.abs(currentY)) * 0.08 * zoomSensitivity;
+              transform += `${transform ? ' ' : ''}scale(${zoom})`;
+            }
+            bgImage.style.transform = transform || 'translate(0,0) scale(1)';
+          }
+
+          if (showGradients && gradients.length > 0 && parallaxEnabled) {
+            gradients.forEach((el, idx) => {
+              const depth = (idx + 1) * 0.32;
+              const x = currentX * 48 * parallaxStrength * depth;
+              const y = currentY * 48 * parallaxStrength * depth;
+              const zoom = 1 + currentX * currentY * 0.09 * zoomSensitivity;
+              el.style.transform = `translate(calc(-50% + ${x}px), calc(-50% + ${y}px)) scale(${zoom})`;
+            });
+          }
+
+          requestAnimationFrame(animateBg);
+        };
+
+        if (!prefersReducedMotion) animateBg();
+
+        // Page transition mask
+        const transition = config.pageTransition || {};
+        if (transition.enabled && transitionMask && !prefersReducedMotion) {
+          const duration = transition.duration ?? 600;
+          const color = transition.color || '#0f0f23';
+          transitionMask.style.background = color;
+
+          document.addEventListener('click', (event) => {
+            const link = event.target?.closest?.('a');
+            if (!link) return;
+            if (link.target === '_blank' || link.hasAttribute('download')) return;
+            const href = link.getAttribute('href');
+            if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+
+            const nextUrl = new URL(link.href, window.location.href);
+            if (nextUrl.origin !== window.location.origin) return;
+
+            event.preventDefault();
+            const x = event.clientX;
+            const y = event.clientY;
+            transitionMask.style.setProperty('--x', `${x}px`);
+            transitionMask.style.setProperty('--y', `${y}px`);
+            transitionMask.style.setProperty('--duration', `${duration}ms`);
+            transitionMask.classList.add('active');
+
+            setTimeout(() => {
+              window.location.href = nextUrl.href;
+            }, Math.max(120, Math.floor(duration * 0.7)));
+          });
+        }
+      })();
+    </script>
   </body>
 </html>
 
@@ -55,7 +378,7 @@ const { title, description = 'Angela 的个人技术博客' } = Astro.props;
   :root {
     --bg: #f6f7fb;
     --surface: #eaedf8;
-    --card: #ffffff;
+    --card: rgba(255, 255, 255, 0.76);
     --border: #d9deef;
     --text-primary: #13172a;
     --text-secondary: #4f5877;
@@ -66,7 +389,7 @@ const { title, description = 'Angela 的个人技术博客' } = Astro.props;
   :root[data-theme='dark'] {
     --bg: #0d1020;
     --surface: #161a31;
-    --card: #161b2f;
+    --card: rgba(22, 27, 47, 0.78);
     --border: #2b3250;
     --text-primary: #e8ebff;
     --text-secondary: #b6bce0;
@@ -79,10 +402,69 @@ const { title, description = 'Angela 的个人技术博客' } = Astro.props;
   body {
     margin: 0;
     font-family: 'Noto Sans SC', system-ui, sans-serif;
-    background:
-      radial-gradient(1100px 600px at 20% -10%, color-mix(in oklab, var(--accent) 16%, transparent), transparent),
-      var(--bg);
+    background: var(--bg);
     color: var(--text-primary);
+  }
+
+  .background {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+  }
+
+  .bg-image {
+    position: absolute;
+    inset: -3%;
+    opacity: 0.12;
+    transition: opacity 0.3s ease;
+    will-change: transform;
+  }
+
+  .gradient {
+    position: absolute;
+    width: clamp(380px, 46vw, 660px);
+    aspect-ratio: 1;
+    top: 50%;
+    left: 50%;
+    border-radius: 50%;
+    filter: blur(110px);
+    opacity: 0.17;
+    transform: translate(-50%, -50%);
+    will-change: transform;
+  }
+
+  .gradient-1 { left: 28%; top: 36%; }
+  .gradient-2 { left: 72%; top: 38%; }
+  .gradient-3 { left: 50%; top: 72%; }
+
+  .bg-loader {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .bg-loader.active { display: flex; }
+  .progress-ring { transform: rotate(-90deg); }
+
+  .cursor-follower {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: 60;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s ease, height 0.2s ease, background 0.2s ease;
+    display: none;
+  }
+
+  .page-layer {
+    position: relative;
+    z-index: 1;
+    min-height: 100vh;
   }
 
   .shell {
@@ -96,6 +478,57 @@ const { title, description = 'Angela 的个人技术博客' } = Astro.props;
     padding-top: 2rem;
   }
 
+  .page-transition-mask {
+    --x: 50vw;
+    --y: 50vh;
+    --duration: 600ms;
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0;
+    clip-path: circle(0 at var(--x) var(--y));
+  }
+
+  .page-transition-mask.active {
+    animation: page-mask-expand var(--duration) ease-out both;
+  }
+
+  @keyframes page-mask-expand {
+    from {
+      opacity: 1;
+      clip-path: circle(0 at var(--x) var(--y));
+    }
+    to {
+      opacity: 1;
+      clip-path: circle(160vmax at var(--x) var(--y));
+    }
+  }
+
+  @keyframes entrance-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes entrance-slide-up {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes entrance-slide-down {
+    from { opacity: 0; transform: translateY(-30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes entrance-zoom-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @media (max-width: 780px) {
+    .cursor-follower { display: none !important; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -103,5 +536,7 @@ const { title, description = 'Angela 的个人技术博客' } = Astro.props;
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+
+    .cursor-follower { display: none !important; }
   }
 </style>
