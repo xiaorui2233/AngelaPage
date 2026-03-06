@@ -1,0 +1,40 @@
+---
+const base = '/AngelaPage';
+const navItems = [
+  { href: `${base}/`, label: 'Home' },
+  { href: `${base}/archive`, label: 'Blog' },
+  { href: `${base}/tags`, label: 'Tags' },
+  { href: `${base}/friends`, label: 'Links' },
+  { href: `${base}/about`, label: 'About' },
+  { href: `${base}/search`, label: 'Search' }
+];
+
+const pathname = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="shell header-inner">
+    <a href={`${base}/`} class="brand">Angela<span class="brand-dot">.</span></a>
+    <nav class="main-nav" aria-label="主导航">
+      {navItems.map((item) => {
+        const isActive = pathname === item.href || (item.href !== `${base}/` && pathname.startsWith(item.href));
+        return (
+          <a href={item.href} class={`nav-link ${isActive ? 'active' : ''}`}>{item.label}</a>
+        );
+      })}
+    </nav>
+    <button class="theme-toggle" data-theme-toggle aria-label="切换明暗模式">🌓</button>
+  </div>
+</header>
+
+<style>
+  .site-header { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(12px); background: color-mix(in oklab, var(--bg) 85%, transparent); border-bottom: 1px solid var(--border); }
+  .header-inner { display: flex; align-items: center; justify-content: space-between; min-height: 64px; gap: 1rem; }
+  .brand { text-decoration: none; color: var(--text-primary); font-size: 1.2rem; font-weight: 700; }
+  .brand-dot { color: var(--accent); }
+  .main-nav { display: flex; gap: 0.25rem; flex-wrap: wrap; }
+  .nav-link { text-decoration: none; color: var(--text-secondary); padding: 0.4rem 0.7rem; border-radius: 10px; font-size: 0.95rem; transition: 0.2s ease; }
+  .nav-link:hover, .nav-link.active { color: var(--text-primary); background: var(--surface); }
+  .theme-toggle { border: 1px solid var(--border); background: var(--card); color: var(--text-primary); border-radius: 10px; height: 36px; width: 42px; cursor: pointer; }
+  @media (max-width: 780px) { .header-inner { flex-wrap: wrap; padding-block: 0.8rem; } .main-nav { order: 3; width: 100%; justify-content: center; } }
+</style>
