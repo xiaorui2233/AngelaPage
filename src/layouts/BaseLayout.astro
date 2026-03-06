@@ -299,6 +299,8 @@ const config = backgroundConfig;
         const zoomSensitivity = config.mouseInteraction?.zoom?.sensitivity ?? 0.4;
         const panEnabled = !!config.mouseInteraction?.pan?.enabled;
         const panStrength = config.mouseInteraction?.pan?.strength ?? 0.3;
+        const imageFollowEnabled = !!(config.mouseInteraction?.imageFollow?.enabled ?? panEnabled);
+        const imageFollowStrength = config.mouseInteraction?.imageFollow?.strength ?? panStrength;
 
         document.addEventListener('mousemove', (event) => {
           targetX = (event.clientX - centerX) / centerX;
@@ -311,8 +313,8 @@ const config = backgroundConfig;
 
           if (isImageMode && bgImage) {
             let transform = '';
-            if (panEnabled) {
-              transform += `translate(${currentX * 80 * panStrength}px, ${currentY * 80 * panStrength}px)`;
+            if (imageFollowEnabled) {
+              transform += `translate(${currentX * 80 * imageFollowStrength}px, ${currentY * 80 * imageFollowStrength}px)`;
             }
             if (zoomEnabled) {
               const zoom = 1 + (Math.abs(currentX) + Math.abs(currentY)) * 0.08 * zoomSensitivity;
