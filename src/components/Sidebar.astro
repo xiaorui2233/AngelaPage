@@ -1,0 +1,44 @@
+---
+interface Props {
+  tags: [string, number][];
+  recent: any[];
+}
+const { tags, recent } = Astro.props;
+---
+
+<aside class="sidebar">
+  <section class="panel">
+    <h3>About me</h3>
+    <p>Hi, 我是 Angela。这里记录前端、设计和生活灵感。</p>
+  </section>
+
+  <section class="panel">
+    <h3>热门标签</h3>
+    <div class="tag-list">
+      {tags.slice(0, 8).map(([tag, count]) => (
+        <a href={`/AngelaPage/tags/${tag}`}>{tag} ({count})</a>
+      ))}
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3>最近文章</h3>
+    <ul>
+      {recent.slice(0, 5).map((post) => (
+        <li><a href={`/AngelaPage/posts/${post.slug}`}>{post.data.title}</a></li>
+      ))}
+    </ul>
+  </section>
+</aside>
+
+<style>
+  .sidebar { display: grid; gap: 1rem; }
+  .panel { border: 1px solid var(--border); border-radius: 12px; background: var(--card); padding: 1rem; }
+  h3 { margin: 0 0 0.8rem; font-size: 1rem; }
+  p, li, a { color: var(--text-secondary); font-size: 0.92rem; }
+  a { text-decoration: none; }
+  a:hover { color: var(--text-primary); }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+  .tag-list a { border: 1px solid var(--border); border-radius: 999px; padding: 0.2rem 0.55rem; }
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
+</style>
