@@ -23,19 +23,19 @@
   "mouseInteraction": {
     "parallax": {
       "enabled": true,
-      "strength": 0.3
+      "strength": 0.5
     },
     "zoom": {
       "enabled": true,
-      "sensitivity": 0.4
+      "sensitivity": 0.6
     },
     "pan": {
       "enabled": true,
-      "strength": 0.3
+      "strength": 0.4
     },
     "imageFollow": {
       "enabled": true,
-      "strength": 0.3
+      "strength": 0.6
     }
   },
   "entranceAnimation": {
