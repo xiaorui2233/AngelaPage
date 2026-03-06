@@ -1,0 +1,1316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Angela 博客发布工具</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans SC', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); min-height: 100vh; padding: 20px; color: #fff; }
+    .container { max-width: 900px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 30px; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-size: 2rem; }
+    h2 { font-size: 1.2rem; margin-bottom: 15px; color: #667eea; }
+    .card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 20px; padding: 25px; margin-bottom: 20px; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; margin-bottom: 8px; font-weight: 500; }
+    label .required { color: #f44336; }
+    input, textarea, select { width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #fff; font-size: 14px; font-family: inherit; }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: #667eea; }
+    input.error, textarea.error, select.error { border-color: #f44336; }
+    textarea { min-height: 200px; resize: vertical; }
+    .btn { padding: 12px 24px; border: none; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; margin-right: 10px; margin-bottom: 10px; }
+    .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4); }
+    .btn-secondary { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); color: #fff; }
+    .btn-danger { background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.5); color: #f44336; }
+    .status { padding: 15px; border-radius: 10px; margin-top: 15px; display: none; }
+    .status.show { display: block; }
+    .status.success { background: rgba(76, 175, 80, 0.2); border: 1px solid rgba(76, 175, 80, 0.5); color: #4caf50; }
+    .status.error { background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.5); color: #f44336; }
+    .status.warning { background: rgba(255, 193, 7, 0.2); border: 1px solid rgba(255, 193, 7, 0.5); color: #ffc107; }
+    .status.info { background: rgba(33, 150, 243, 0.2); border: 1px solid rgba(33, 150, 243, 0.5); color: #2196f3; }
+    .tabs { display: flex; margin-bottom: 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.2); }
+    .tab { padding: 12px 24px; cursor: pointer; border-bottom: 2px solid transparent; color: rgba(255, 255, 255, 0.7); }
+    .tab.active { border-bottom-color: #667eea; color: #fff; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .file-list { display: grid; gap: 10px; }
+    .file-item { background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+    .file-item:hover { background: rgba(255, 255, 255, 0.1); }
+    .file-item.selected { background: rgba(102, 126, 234, 0.3); border: 1px solid #667eea; }
+    .error-list { margin-top: 10px; padding-left: 20px; }
+    .error-list li { margin: 5px 0; font-size: 13px; }
+    .preview-box { background: rgba(0,0,0,0.3); border-radius: 10px; padding: 15px; margin-top: 10px; font-size: 13px; max-height: 200px; overflow-y: auto; }
+    .check-btn { font-size: 12px; padding: 6px 12px; margin-bottom: 10px; }
+    .validation-result { margin-top: 15px; }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+    input[type="color"] {
+      cursor: pointer;
+    }
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Angela 博客发布工具</h1>
+    
+    <div class="tabs">
+      <div class="tab active" data-tab="new-post">发布新文章</div>
+      <div class="tab" data-tab="edit-file">修改页面</div>
+      <div class="tab" data-tab="manage">文章管理</div>
+      <div class="tab" data-tab="background">背景设置</div>
+    </div>
+
+    <div class="tab-content active" id="new-post">
+      <div class="card">
+        <h2>发布新文章</h2>
+        <div class="form-group">
+          <label>文章标题 <span class="required">*</span></label>
+          <input type="text" id="title" placeholder="输入文章标题（必填）">
+        </div>
+        <div class="form-group">
+          <label>文章描述 <span class="required">*</span></label>
+          <input type="text" id="description" placeholder="输入文章简介（必填）">
+        </div>
+        <div class="form-group">
+          <label>分类</label>
+          <select id="category">
+            <option value="随笔">随笔</option>
+            <option value="技术">技术</option>
+            <option value="生活">生活</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>标签（用逗号分隔）</label>
+          <input type="text" id="tags" placeholder="如: JavaScript, 教程">
+        </div>
+        <div class="form-group">
+          <label>文章内容（Markdown） <span class="required">*</span></label>
+          <textarea id="content" placeholder="在这里写文章内容...（必填）"></textarea>
+        </div>
+        <div class="form-group">
+          <label>提交信息</label>
+          <input type="text" id="commit-msg" placeholder="如: 新增文章 xxx">
+        </div>
+        
+        <button class="btn btn-secondary check-btn" onclick="validatePost()">&#10004; 检查文章格式</button>
+        <div id="post-validation" class="validation-result"></div>
+        <br>
+        <button class="btn btn-primary" onclick="publishPost()">发布文章</button>
+        <div id="publish-status" class="status"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="edit-file">
+      <div class="card">
+        <h2>修改页面</h2>
+        <div class="form-group">
+          <label>选择要修改的页面</label>
+          <select id="page-select" onchange="loadPageContent()">
+            <option value="">-- 选择页面 --</option>
+            <option value="src/pages/about.astro">关于页</option>
+            <option value="src/pages/friends.astro">友链页</option>
+            <option value="src/pages/index.astro">首页</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>文件内容</label>
+          <textarea id="file-content" style="min-height: 350px;" placeholder="选择页面后加载内容..."></textarea>
+        </div>
+        
+        <button class="btn btn-secondary check-btn" onclick="validateFile()">&#10004; 检查文件格式</button>
+        <div id="file-validation" class="validation-result"></div>
+        <br>
+        <div class="form-group">
+          <label>提交信息</label>
+          <input type="text" id="edit-commit-msg" placeholder="如: 更新关于页">
+        </div>
+        <button class="btn btn-primary" onclick="saveAndPublish()">保存并发布</button>
+        <div id="edit-status" class="status"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="manage">
+      <div class="card">
+        <h2>现有文章</h2>
+        <div id="article-list" class="file-list">
+          <p style="color: rgba(255,255,255,0.5);">点击下方按钮加载文章列表</p>
+        </div>
+        <br>
+        <button class="btn btn-secondary" onclick="loadArticles()">刷新文章列表</button>
+      </div>
+      <div class="card" id="article-edit-card" style="display: none;">
+        <h2>编辑文章</h2>
+        <div class="form-group">
+          <label>文件名</label>
+          <input type="text" id="edit-article-filename" readonly>
+        </div>
+        <div class="form-group">
+          <label>文章内容</label>
+          <textarea id="edit-article-content" style="min-height: 300px;"></textarea>
+        </div>
+        
+        <button class="btn btn-secondary check-btn" onclick="validateEditArticle()">&#10004; 检查文章格式</button>
+        <div id="article-validation" class="validation-result"></div>
+        <br>
+        <div class="form-group">
+          <label>提交信息</label>
+          <input type="text" id="edit-article-commit" placeholder="如: 更新文章 xxx">
+        </div>
+        <button class="btn btn-primary" onclick="updateArticle()">保存并更新</button>
+        <button class="btn btn-danger" onclick="deleteArticle()">删除文章</button>
+        <div id="article-status" class="status"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="background">
+      <div class="card">
+        <h2>背景设置</h2>
+        <p style="color: rgba(255,255,255,0.7); margin-bottom: 20px;">自定义网页背景效果，包括渐变色、动画和鼠标交互效果</p>
+        
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="bg-enabled" checked style="width: auto; margin-right: 10px;">
+            启用背景效果
+          </label>
+        </div>
+
+        <h3 style="color: #667eea; margin: 20px 0 15px;">背景类型</h3>
+        
+        <div class="form-group">
+          <label>选择背景类型</label>
+          <select id="bg-type" onchange="toggleBgType()" style="width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #fff; font-size: 14px;">
+            <option value="image">背景图片</option>
+            <option value="gradient">渐变球</option>
+          </select>
+        </div>
+
+        <div id="bg-image-settings" style="display: block;">
+          <div class="form-group">
+            <label>图片URL（支持多URL，每行一个，按顺序尝试加载）</label>
+            <textarea id="bg-image-url" rows="4" placeholder="每行一个图片URL&#10;如: /images/bg1.jpg&#10;https://example.com/bg2.jpg" style="width: 100%; padding: 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #fff; font-size: 14px; resize: vertical;"></textarea>
+          </div>
+
+          <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 15px;">
+            <button type="button" onclick="openImagePicker()" class="btn btn-secondary" style="padding: 8px 16px; font-size: 12px;">从仓库选择</button>
+          </div>
+
+          <!-- 图片选择器弹窗 -->
+          <div id="image-picker-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; align-items: center; justify-content: center;">
+            <div style="background: #1a1a2e; padding: 20px; border-radius: 12px; max-width: 600px; max-height: 80vh; overflow-y: auto; width: 90%;">
+              <h3 style="color: #667eea; margin-bottom: 15px;">选择仓库中的图片</h3>
+              <div id="repo-images-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
+                <div style="text-align: center; color: #888; grid-column: span 3;">加载中...</div>
+              </div>
+              <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="closeImagePicker()" class="btn btn-secondary">取消</button>
+                <button onclick="confirmImagePicker()" class="btn btn-primary">确认</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>透明度</label>
+            <input type="range" id="bg-image-opacity" min="0.1" max="1" step="0.1" value="1" style="width: 100%;">
+            <span id="bg-image-opacity-val">1</span>
+          </div>
+          <div class="form-group">
+            <label>背景尺寸</label>
+            <select id="bg-image-size" style="width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #fff; font-size: 14px;">
+              <option value="cover">覆盖整个页面 (cover)</option>
+              <option value="contain">适应页面 (contain)</option>
+              <option value="100% 100%">拉伸 (stretch)</option>
+              <option value="auto">原始大小 (auto)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>背景位置</label>
+            <select id="bg-image-position" style="width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #fff; font-size: 14px;">
+              <option value="center">居中 (center)</option>
+              <option value="top">顶部 (top)</option>
+              <option value="bottom">底部 (bottom)</option>
+              <option value="left">左侧 (left)</option>
+              <option value="right">右侧 (right)</option>
+              <option value="top left">左上 (top left)</option>
+              <option value="top right">右上 (top right)</option>
+              <option value="bottom left">左下 (bottom left)</option>
+              <option value="bottom right">右下 (bottom right)</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="bg-gradient-settings" style="display: none;">
+          <p style="color: rgba(255,255,255,0.5); margin-bottom: 15px;">当图片加载失败时显示的备用渐变效果</p>
+          
+          <div class="form-group">
+            <label>
+              <input type="checkbox" id="gradient-fallback" checked style="width: auto; margin-right: 10px;">
+              启用备用渐变
+            </label>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+            <h4 style="margin-bottom: 10px;">渐变球 1 (左上)</h4>
+            <div class="form-group">
+              <label>颜色</label>
+              <input type="color" id="g1-color" value="#667eea" style="height: 40px; padding: 5px;">
+            </div>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+            <h4 style="margin-bottom: 10px;">渐变球 2 (右下)</h4>
+            <div class="form-group">
+              <label>颜色</label>
+              <input type="color" id="g2-color" value="#764ba2" style="height: 40px; padding: 5px;">
+            </div>
+          </div>
+
+          <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+            <h4 style="margin-bottom: 10px;">渐变球 3 (中间)</h4>
+            <div class="form-group">
+              <label>颜色</label>
+              <input type="color" id="g3-color" value="#f093fb" style="height: 40px; padding: 5px;">
+            </div>
+          </div>
+        </div>
+
+        <h3 style="color: #667eea; margin: 20px 0 15px;">鼠标交互设置</h3>
+        
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="parallax-enabled" checked style="width: auto; margin-right: 10px;">
+            启用视差效果 (鼠标移动时背景跟随)
+          </label>
+        </div>
+        <div class="form-group">
+          <label>视差强度</label>
+          <input type="range" id="parallax-strength" min="0" max="2" step="0.1" value="0.5" style="width: 100%;">
+          <span id="parallax-strength-val">0.5</span>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="zoom-enabled" checked style="width: auto; margin-right: 10px;">
+            启用缩放效果 (鼠标位置影响背景大小)
+          </label>
+        </div>
+        <div class="form-group">
+          <label>缩放灵敏度</label>
+          <input type="range" id="zoom-sensitivity" min="0" max="3" step="0.1" value="1.0" style="width: 100%;">
+          <span id="zoom-sensitivity-val">1.0</span>
+        </div>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="pan-enabled" checked style="width: auto; margin-right: 10px;">
+            启用平移效果 (鼠标位置决定背景偏移)
+          </label>
+        </div>
+        <div class="form-group">
+          <label>平移强度</label>
+          <input type="range" id="pan-strength" min="0" max="1" step="0.1" value="0.3" style="width: 100%;">
+          <span id="pan-strength-val">0.3</span>
+        </div>
+
+        <h3 style="color: #667eea; margin: 20px 0 15px;">入场动画设置</h3>
+        
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="anim-enabled" checked style="width: auto; margin-right: 10px;">
+            启用页面入场动画
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label>动画类型</label>
+          <select id="anim-type" style="width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #fff; font-size: 14px;">
+            <option value="slide-up">向上滑动淡入 (Slide Up)</option>
+            <option value="slide-down">向下滑动淡入 (Slide Down)</option>
+            <option value="fade">纯淡入 (Fade)</option>
+            <option value="zoom-in">缩放淡入 (Zoom In)</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>持续时间 (秒)</label>
+          <input type="range" id="anim-duration" min="0.2" max="3" step="0.1" value="0.8" style="width: 100%;">
+          <span id="anim-duration-val">0.8</span>
+        </div>
+        
+        <div class="form-group">
+          <label>延迟执行 (秒)</label>
+          <input type="range" id="anim-delay" min="0" max="2" step="0.1" value="0" style="width: 100%;">
+          <span id="anim-delay-val">0</span>
+        </div>
+        
+        <div class="form-group">
+          <label>缓动效果 (Easing)</label>
+          <select id="anim-easing" style="width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #fff; font-size: 14px;">
+            <option value="ease-out">平滑减速 (ease-out)</option>
+            <option value="ease-in-out">先加速后减速 (ease-in-out)</option>
+            <option value="linear">匀速 (linear)</option>
+            <option value="cubic-bezier(0.68, -0.55, 0.265, 1.55)">弹性回弹 (Bouncy)</option>
+          </select>
+        </div>
+
+        <h3 style="color: #667eea; margin: 20px 0 15px;">鼠标跟随圆圈</h3>
+        
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="cursor-enabled" checked style="width: auto; margin-right: 10px;">
+            启用鼠标跟随圆圈
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label>圆圈大小 (px)</label>
+          <input type="range" id="cursor-size" min="10" max="100" value="40" style="width: 100%;">
+          <span id="cursor-size-val">40</span>
+        </div>
+        
+        <div class="form-group">
+          <label>悬停时大小 (px)</label>
+          <input type="range" id="cursor-hover-size" min="20" max="150" value="60" style="width: 100%;">
+          <span id="cursor-hover-size-val">60</span>
+        </div>
+        
+        <div class="form-group">
+          <label>边框颜色</label>
+          <input type="color" id="cursor-border-color" value="#ffffff" style="height: 40px; padding: 5px;">
+        </div>
+        
+        <div class="form-group">
+          <label>边框透明度</label>
+          <input type="range" id="cursor-border-opacity" min="0" max="1" step="0.1" value="0.8" style="width: 100%;">
+          <span id="cursor-border-opacity-val">0.8</span>
+        </div>
+        
+        <div class="form-group">
+          <label>填充颜色 (悬停时)</label>
+          <input type="color" id="cursor-fill-color" value="#ffffff" style="height: 40px; padding: 5px;">
+        </div>
+        
+        <div class="form-group">
+          <label>填充透明度</label>
+          <input type="range" id="cursor-fill-opacity" min="0" max="1" step="0.1" value="0.2" style="width: 100%;">
+          <span id="cursor-fill-opacity-val">0.2</span>
+        </div>
+        
+        <div class="form-group">
+          <label>混合模式</label>
+          <select id="cursor-blend-mode" style="width: 100%; padding: 12px 16px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 10px; color: #fff; font-size: 14px;">
+            <option value="difference">反色 (difference)</option>
+            <option value="exclusion">排除 (exclusion)</option>
+            <option value="overlay">叠加 (overlay)</option>
+            <option value="screen">滤色 (screen)</option>
+            <option value="none">无 (none)</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>跟随速度 (越小越平滑)</label>
+          <input type="range" id="cursor-speed" min="0.05" max="0.5" step="0.01" value="0.15" style="width: 100%;">
+          <span id="cursor-speed-val">0.15</span>
+        </div>
+
+        <h3 style="color: #667eea; margin: 20px 0 15px;">页面切换动画</h3>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="page-transition-enabled" checked style="width: auto; margin-right: 10px;">
+            启用页面切换动画
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>动画持续时间 (毫秒)</label>
+          <input type="range" id="page-transition-duration" min="300" max="1500" step="50" value="600" style="width: 100%;">
+          <span id="page-transition-duration-val">600</span>
+        </div>
+
+        <div class="form-group">
+          <label>遮罩颜色</label>
+          <input type="color" id="page-transition-color" value="#0f0f23" style="height: 40px; padding: 5px;">
+        </div>
+
+        <h3 style="color: #667eea; margin: 20px 0 15px;">背景加载进度条</h3>
+
+        <div class="form-group">
+          <label>
+            <input type="checkbox" id="bg-loader-enabled" checked style="width: auto; margin-right: 10px;">
+            启用加载进度条
+          </label>
+        </div>
+
+        <div class="form-group">
+          <label>进度条颜色</label>
+          <input type="color" id="bg-loader-color" value="#667eea" style="height: 40px; padding: 5px;">
+        </div>
+
+        <div class="form-group">
+          <label>进度条大小 (px)</label>
+          <input type="range" id="bg-loader-size" min="30" max="120" step="10" value="60" style="width: 100%;">
+          <span id="bg-loader-size-val">60</span>
+        </div>
+
+        <div style="margin-top: 20px;">
+          <button class="btn btn-secondary" onclick="loadBackgroundConfig()">加载当前配置</button>
+          <button class="btn btn-primary" onclick="saveBackgroundConfig()">保存并发布</button>
+        </div>
+        <div id="bg-status" class="status"></div>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px; color: rgba(255,255,255,0.5); font-size: 12px;">
+      <p>发布后请等待 1-2 分钟让 GitHub Actions 完成部署</p>
+      <p>博客地址: <a href="https://xiaorui2233.github.io/AngelaPage/" target="_blank" style="color: #667eea;">https://xiaorui2233.github.io/AngelaPage/</a></p>
+    </div>
+  </div>
+
+  <script>
+    // UTF-8 安全的 base64 编码函数
+    function utf8ToBase64(str) {
+      return btoa(unescape(encodeURIComponent(str)));
+    }
+
+    // Hex颜色转RGB
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? 
+        parseInt(result[1], 16) + ', ' + parseInt(result[2], 16) + ', ' + parseInt(result[3], 16) 
+        : '255, 255, 255';
+    }
+
+    // Token 管理
+    let GITHUB_TOKEN = localStorage.getItem('github_token') || '';
+    if (!GITHUB_TOKEN) {
+      GITHUB_TOKEN = prompt('请输入 GitHub Token:');
+      if (GITHUB_TOKEN) localStorage.setItem('github_token', GITHUB_TOKEN);
+    }
+    const REPO_OWNER = 'xiaorui2233';
+    const REPO_NAME = 'AngelaPage';
+    const API_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+
+    // Tab 切换
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+        
+        // 切换到背景设置标签时自动加载配置
+        if (tab.dataset.tab === 'background') {
+          loadBackgroundConfig();
+        }
+      });
+    });
+
+    // 显示状态
+    function showStatus(id, msg, type) {
+      const el = document.getElementById(id);
+      el.className = `status ${type} show`;
+      el.textContent = msg;
+    }
+
+    function clearValidation(id) {
+      document.getElementById(id).innerHTML = '';
+      document.querySelectorAll('.error').forEach(el => el.classList.remove('error'));
+    }
+
+    // ============ 验证函数 ============
+
+    // 验证新文章
+    function validatePost() {
+      const title = document.getElementById('title').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const content = document.getElementById('content').value;
+      const resultDiv = document.getElementById('post-validation');
+      
+      let errors = [];
+      let warnings = [];
+
+      // 检查必填字段
+      if (!title) errors.push('文章标题不能为空');
+      if (!description) errors.push('文章描述不能为空');
+      if (!content.trim()) errors.push('文章内容不能为空');
+      
+      // 检查标签
+      const tagsInput = document.getElementById('tags').value.trim();
+      if (!tagsInput) {
+        warnings.push('建议填写标签，如不填写将自动添加"默认"标签');
+      }
+
+      // 检查标题长度
+      if (title && title.length > 100) {
+        warnings.push('标题过长，建议不超过100个字符');
+      }
+
+      // 检查描述长度
+      if (description && description.length > 200) {
+        warnings.push('描述过长，建议不超过200个字符');
+      }
+
+      // 检查内容中的常见问题
+      if (content) {
+        // 检查是否有未闭合的 markdown 标题
+        const headingMatches = content.match(/^#+ /gm);
+        if (headingMatches) {
+          const h1Matches = content.match(/^# /gm);
+          if (h1Matches && h1Matches.length > 1) {
+            warnings.push('建议只使用一个 # 一级标题');
+          }
+        }
+
+        // 检查是否有太短的标题
+        if (content.includes('## ') || content.includes('### ')) {
+          const shortHeadings = content.match(/^#{2,3} [a-zA-Z0-9]$/gm);
+          if (shortHeadings) {
+            warnings.push('发现可能太短的二级/三级标题');
+          }
+        }
+
+        // 检查是否有大段未格式化的文本
+        const paragraphs = content.split('\n\n');
+        paragraphs.forEach(p => {
+          if (p.length > 500 && !p.includes('#') && !p.includes('- ') && !p.includes('* ')) {
+            warnings.push('发现较长段落，建议适当分段或使用列表');
+          }
+        });
+      }
+
+      // 显示结果
+      if (errors.length > 0) {
+        resultDiv.innerHTML = `<div class="status error show"><strong>验证失败：</strong><ul class="error-list">${errors.map(e => `<li>${e}</li>`).join('')}</ul></div>`;
+      } else if (warnings.length > 0) {
+        resultDiv.innerHTML = `<div class="status warning show"><strong>格式检查通过，但有建议：</strong><ul class="error-list">${warnings.map(w => `<li>${w}</li>`).join('')}</ul></div>`;
+      } else {
+        resultDiv.innerHTML = `<div class="status success show">&#10004; 格式检查通过！文章可以发布。</div>`;
+      }
+    }
+
+    // 验证编辑的文件
+    function validateFile() {
+      const filePath = document.getElementById('page-select').value;
+      const content = document.getElementById('file-content').value;
+      const resultDiv = document.getElementById('file-validation');
+      
+      let errors = [];
+      let warnings = [];
+
+      if (!filePath) {
+        errors.push('请先选择一个文件');
+      }
+
+      if (content) {
+        // 检查 JavaScript/TypeScript 语法
+        if (filePath.endsWith('.astro')) {
+          // 检查常见的 Astro 语法问题
+          
+          // 检查未闭合的字符串
+          const stringMatches = content.match(/(["'`])(?:(?!\1)[^\\]|\\.)*\1/g);
+          if (stringMatches) {
+            const openQuotes = (content.match(/(["'`])/g) || []).length;
+            if (openQuotes % 2 !== 0) {
+              errors.push('可能有未闭合的引号');
+            }
+          }
+
+          // 检查未闭合的大括号
+          const openBraces = (content.match(/{/g) || []).length;
+          const closeBraces = (content.match(/}/g) || []).length;
+          if (openBraces !== closeBraces) {
+            errors.push(`大括号不匹配: ${openBraces} 个开括号, ${closeBraces} 个闭括号`);
+          }
+
+          // 检查未闭合的方括号
+          const openBrackets = (content.match(/\[/g) || []).length;
+          const closeBrackets = (content.match(/\]/g) || []).length;
+          if (openBrackets !== closeBrackets) {
+            errors.push(`方括号不匹配: ${openBrackets} 个开括号, ${closeBrackets} 个闭括号`);
+          }
+
+          // 检查未闭合的圆括号
+          const openParens = (content.match(/\(/g) || []).length;
+          const closeParens = (content.match(/\)/g) || []).length;
+          if (openParens !== closeParens) {
+            errors.push(`圆括号不匹配: ${openParens} 个开括号, ${closeParens} 个闭括号`);
+          }
+        }
+      }
+
+      // 显示结果
+      if (errors.length > 0) {
+        resultDiv.innerHTML = `<div class="status error show"><strong>验证失败：</strong><ul class="error-list">${errors.map(e => `<li>${e}</li>`).join('')}</ul></div>`;
+      } else if (warnings.length > 0) {
+        resultDiv.innerHTML = `<div class="status warning show"><strong>格式检查通过，但有建议：</strong><ul class="error-list">${warnings.map(w => `<li>${w}</li>`).join('')}</ul></div>`;
+      } else {
+        resultDiv.innerHTML = `<div class="status success show">&#10004; 格式检查通过！文件可以发布。</div>`;
+      }
+    }
+
+    // 验证编辑的文章
+    function validateEditArticle() {
+      const content = document.getElementById('edit-article-content').value;
+      const filename = document.getElementById('edit-article-filename').value;
+      const resultDiv = document.getElementById('article-validation');
+      
+      let errors = [];
+      let warnings = [];
+
+      // 检查 frontmatter
+      if (content) {
+        // 检查是否有 frontmatter
+        if (!content.startsWith('---')) {
+          errors.push('文章缺少 frontmatter 头部（应以 --- 开头）');
+        } else {
+          // 检查 frontmatter 是否完整
+          const frontmatterEnd = content.indexOf('---', 3);
+          if (frontmatterEnd === -1) {
+            errors.push('frontmatter 未正确闭合（缺少结尾的 ---）');
+          } else {
+            const frontmatter = content.substring(3, frontmatterEnd);
+            
+            // 检查必需字段
+            if (!frontmatter.includes('title:')) {
+              errors.push('frontmatter 缺少 title 字段');
+            }
+            if (!frontmatter.includes('description:')) {
+              errors.push('frontmatter 缺少 description 字段');
+            }
+            if (!frontmatter.includes('pubDate:')) {
+              errors.push('frontmatter 缺少 pubDate 字段');
+            }
+            
+            // 检查字段格式
+            const titleMatch = frontmatter.match(/title:\s*["']?([^"'"\n]+)["']?/);
+            if (titleMatch && !titleMatch[1].trim()) {
+              errors.push('title 不能为空');
+            }
+            
+            const descMatch = frontmatter.match(/description:\s*["']?([^"'"\n]+)["']?/);
+            if (descMatch && !descMatch[1].trim()) {
+              errors.push('description 不能为空');
+            }
+            
+            const dateMatch = frontmatter.match(/pubDate:\s*(\d{4}-\d{2}-\d{2})/);
+            if (dateMatch) {
+              const date = new Date(dateMatch[1]);
+              if (isNaN(date.getTime())) {
+                errors.push('pubDate 格式不正确，应为 YYYY-MM-DD');
+              }
+            } else if (frontmatter.includes('pubDate:')) {
+              warnings.push('pubDate 格式可能不正确');
+            }
+          }
+        }
+
+        // 检查引号匹配
+        const quotes = content.match(/["'`]/g) || [];
+        if (quotes.length % 2 !== 0) {
+          errors.push('引号数量不匹配，可能有未闭合的引号');
+        }
+
+        // 检查括号匹配
+        const braces = { '{': 0, '}': 0, '[': 0, ']': 0, '(': 0, ')': 0 };
+        for (const char of content) {
+          if (char in braces) braces[char]++;
+        }
+        if (braces['{'] !== braces['}']) errors.push(`大括号不匹配: ${braces['{']} 个开, ${braces['}']} 个闭`);
+        if (braces['['] !== braces[']']) errors.push(`方括号不匹配: ${braces['[']} 个开, ${braces[']']} 个闭`);
+        if (braces['('] !== braces[')']) errors.push(`圆括号不匹配: ${braces['(']} 个开, ${braces[')']} 个闭`);
+      } else {
+        errors.push('文章内容不能为空');
+      }
+
+      // 显示结果
+      if (errors.length > 0) {
+        resultDiv.innerHTML = `<div class="status error show"><strong>验证失败：</strong><ul class="error-list">${errors.map(e => `<li>${e}</li>`).join('')}</ul></div>`;
+      } else if (warnings.length > 0) {
+        resultDiv.innerHTML = `<div class="status warning show"><strong>格式检查通过，但有建议：</strong><ul class="error-list">${warnings.map(w => `<li>${w}</li>`).join('')}</ul></div>`;
+      } else {
+        resultDiv.innerHTML = `<div class="status success show">&#10004; 格式检查通过！文章可以发布。</div>`;
+      }
+    }
+
+    // ============ GitHub API 函数 ============
+
+    // 图片选择器相关
+    let selectedRepoImage = '';
+
+    async function openImagePicker() {
+      const modal = document.getElementById('image-picker-modal');
+      const list = document.getElementById('repo-images-list');
+      modal.style.display = 'flex';
+      list.innerHTML = '<div style="text-align: center; color: #888; grid-column: span 3;">加载中...</div>';
+
+      try {
+        // 获取仓库中的图片文件
+        const response = await fetch(`${API_BASE}/contents/images`, {
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
+        });
+
+        if (!response.ok) throw new Error('获取图片列表失败');
+
+        const files = await response.json();
+        const imageFiles = files.filter(f => /\.(jpg|jpeg|png|gif|webp|svg)$/i.test(f.name));
+
+        if (imageFiles.length === 0) {
+          list.innerHTML = '<div style="text-align: center; color: #888; grid-column: span 3;">未找到图片文件，请先将图片上传到 images 目录</div>';
+          return;
+        }
+
+        list.innerHTML = imageFiles.map(file => `
+          <div style="cursor: pointer; border: 2px solid transparent; border-radius: 8px; overflow: hidden; transition: border-color 0.2s;"
+               onclick="selectRepoImage('${file.name}', this)" data-path="${file.path}">
+            <img src="${file.download_url}" style="width: 100%; height: 80px; object-fit: cover;" alt="${file.name}">
+            <div style="padding: 5px; font-size: 11px; color: #aaa; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${file.name}</div>
+          </div>
+        `).join('');
+      } catch (error) {
+        list.innerHTML = `<div style="text-align: center; color: #ff6b6b; grid-column: span 3;">加载失败: ${error.message}</div>`;
+      }
+    }
+
+    function selectRepoImage(filename, element) {
+      // 取消之前的选择
+      document.querySelectorAll('#repo-images-list > div').forEach(div => {
+        div.style.borderColor = 'transparent';
+      });
+      // 选择新的图片 - 使用完整路径
+      const path = element.getAttribute('data-path');
+      selectedRepoImage = '/AngelaPage/' + path;
+      element.style.borderColor = '#667eea';
+    }
+
+    function closeImagePicker() {
+      document.getElementById('image-picker-modal').style.display = 'none';
+      selectedRepoImage = '';
+    }
+
+    function confirmImagePicker() {
+      if (selectedRepoImage) {
+        const textarea = document.getElementById('bg-image-url');
+        if (textarea.value) {
+          textarea.value += '\n' + selectedRepoImage;
+        } else {
+          textarea.value = selectedRepoImage;
+        }
+      }
+      closeImagePicker();
+    }
+
+    function slugify(text) {
+      return text.toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    }
+
+    async function publishPost() {
+      // 先验证
+      const title = document.getElementById('title').value.trim();
+      const description = document.getElementById('description').value.trim();
+      const category = document.getElementById('category').value;
+      const tags = document.getElementById('tags').value.trim();
+      const content = document.getElementById('content').value;
+      const commitMsg = document.getElementById('commit-msg').value.trim();
+
+      // 基本验证
+      if (!title || !description || !content.trim()) {
+        showStatus('publish-status', '请填写标题、描述和内容', 'error');
+        return;
+      }
+
+      const slug = slugify(title);
+      const filename = `${slug}.md`;
+      // 使用本地时区获取日期
+      const date = new Date();
+      const localDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+      const tagsArray = tags ? tags.split(',').map(t => t.trim()).filter(t => t) : ['默认'];
+      
+      const frontmatter = `---
+title: "${title}"
+description: "${description}"
+pubDate: ${localDate}
+tags: [${tagsArray.map(t => `"${t}"`).join(', ')}]
+category: "${category}"
+---
+
+${content}`;
+
+      showStatus('publish-status', '正在发布...', 'info');
+
+      try {
+        // 先检查文件是否已存在
+        let sha = null;
+        const checkResponse = await fetch(`${API_BASE}/contents/src/content/posts/${filename}`, {
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        
+        if (checkResponse.ok) {
+          const data = await checkResponse.json();
+          sha = data.sha;
+          if (!confirm(`文章 "${title}" 已存在，是否覆盖？`)) {
+            showStatus('publish-status', '已取消发布', 'warning');
+            return;
+          }
+        }
+
+        // 使用简单的 PUT 方法创建/更新文件
+        await fetch(`${API_BASE}/contents/src/content/posts/${filename}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            message: commitMsg || `新增文章: ${title}`, 
+            content: utf8ToBase64(frontmatter), 
+            sha: sha 
+          })
+        });
+
+        showStatus('publish-status', `文章 "${title}" 发布成功！等待 1-2 分钟部署...`, 'success');
+        document.getElementById('title').value = '';
+        document.getElementById('description').value = '';
+        document.getElementById('tags').value = '';
+        document.getElementById('content').value = '';
+        document.getElementById('post-validation').innerHTML = '';
+      } catch (error) {
+        showStatus('publish-status', '发布失败: ' + error.message, 'error');
+      }
+    }
+
+    let currentFiles = {};
+
+    async function loadPageContent() {
+      const filePath = document.getElementById('page-select').value;
+      if (!filePath) return;
+      showStatus('edit-status', '正在加载...', 'info');
+      try {
+        const response = await fetch(`${API_BASE}/contents/${filePath}`, { 
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } 
+        });
+        const data = await response.json();
+        const content = decodeURIComponent(escape(atob(data.content)));
+        currentFiles[filePath] = { sha: data.sha, content: content };
+        document.getElementById('file-content').value = content;
+        document.getElementById('file-validation').innerHTML = '';
+        showStatus('edit-status', '加载成功', 'success');
+      } catch (error) {
+        showStatus('edit-status', '加载失败: ' + error.message, 'error');
+      }
+    }
+
+    async function saveAndPublish() {
+      const filePath = document.getElementById('page-select').value;
+      const content = document.getElementById('file-content').value;
+      const commitMsg = document.getElementById('edit-commit-msg').value.trim();
+      if (!filePath || !content || !currentFiles[filePath]) { 
+        showStatus('edit-status', '请选择文件并填写内容', 'error'); 
+        return; 
+      }
+      
+      // 验证
+      const validationResult = document.getElementById('file-validation');
+      if (!validationResult.querySelector('.success')) {
+        if (!confirm('文件尚未通过格式检查，确认要发布吗？')) return;
+      }
+      
+      showStatus('edit-status', '正在保存...', 'info');
+      try {
+        await fetch(`${API_BASE}/contents/${filePath}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: commitMsg || `更新文件: ${filePath}`, content: utf8ToBase64(content), sha: currentFiles[filePath].sha })
+        });
+        showStatus('edit-status', '保存成功！等待部署...', 'success');
+      } catch (error) {
+        showStatus('edit-status', '保存失败: ' + error.message, 'error');
+      }
+    }
+
+    async function loadArticles() {
+      const listEl = document.getElementById('article-list');
+      listEl.innerHTML = '<p>正在加载...</p>';
+      try {
+        const response = await fetch(`${API_BASE}/contents/src/content/posts`, { 
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } 
+        });
+        const files = await response.json();
+        const mdFiles = files.filter(f => f.name.endsWith('.md'));
+        if (mdFiles.length === 0) { listEl.innerHTML = '<p>暂无文章</p>'; return; }
+        listEl.innerHTML = mdFiles.map(f => `<div class="file-item" onclick="editArticle('${f.name}')"><span>${f.name.replace('.md', '')}</span><span style="color:rgba(255,255,255,0.5);font-size:12px;">点击编辑</span></div>`).join('');
+      } catch (error) {
+        listEl.innerHTML = `<p style="color:#f44336;">加载失败:${error.message}</p>`;
+      }
+    }
+
+    async function editArticle(filename) {
+      document.getElementById('article-edit-card').style.display = 'block';
+      showStatus('article-status', '正在加载...', 'info');
+      try {
+        const response = await fetch(`${API_BASE}/contents/src/content/posts/${filename}`, { 
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' } 
+        });
+        const data = await response.json();
+        const content = decodeURIComponent(escape(atob(data.content)));
+        document.getElementById('edit-article-filename').value = filename;
+        document.getElementById('edit-article-content').value = content;
+        currentFiles[filename] = { sha: data.sha, content: content };
+        document.getElementById('article-validation').innerHTML = '';
+        showStatus('article-status', '', 'info');
+        document.getElementById('article-edit-card').scrollIntoView({ behavior: 'smooth' });
+      } catch (error) {
+        showStatus('article-status', '加载失败: ' + error.message, 'error');
+      }
+    }
+
+    async function updateArticle() {
+      const filename = document.getElementById('edit-article-filename').value;
+      const content = document.getElementById('edit-article-content').value;
+      const commitMsg = document.getElementById('edit-article-commit').value.trim();
+      if (!filename || !content || !currentFiles[filename]) { 
+        showStatus('article-status', '请填写内容', 'error'); 
+        return; 
+      }
+      
+      // 验证
+      const validationResult = document.getElementById('article-validation');
+      if (!validationResult.querySelector('.success')) {
+        if (!confirm('文章尚未通过格式检查，确认要发布吗？')) return;
+      }
+      
+      showStatus('article-status', '正在保存...', 'info');
+      try {
+        await fetch(`${API_BASE}/contents/src/content/posts/${filename}`, {
+          method: 'PUT',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: commitMsg || `更新文章: ${filename}`, content: utf8ToBase64(content), sha: currentFiles[filename].sha })
+        });
+        showStatus('article-status', '更新成功！等待部署...', 'success');
+      } catch (error) {
+        showStatus('article-status', '更新失败: ' + error.message, 'error');
+      }
+    }
+
+    async function deleteArticle() {
+      const filename = document.getElementById('edit-article-filename').value;
+      if (!filename) { showStatus('article-status', '请先选择要删除的文章', 'error'); return; }
+      if (!confirm(`确定要删除文章 "${filename}" 吗？此操作不可恢复！`)) return;
+      if (!currentFiles[filename]) { showStatus('article-status', '请先加载文章', 'error'); return; }
+      showStatus('article-status', '正在删除...', 'info');
+      try {
+        await fetch(`${API_BASE}/contents/src/content/posts/${filename}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: `删除文章: ${filename}`, sha: currentFiles[filename].sha })
+        });
+        showStatus('article-status', '删除成功！等待部署...', 'success');
+        document.getElementById('article-edit-card').style.display = 'none';
+        loadArticles();
+      } catch (error) {
+        showStatus('article-status', '删除失败: ' + error.message, 'error');
+      }
+    }
+
+    // ============ 背景配置函数 ============
+    let bgConfigSha = null;
+
+    // 绑定滑块值显示
+    function bindSlider(id, displayId) {
+      const slider = document.getElementById(id);
+      const display = document.getElementById(displayId);
+      if (slider && display) {
+        slider.addEventListener('input', () => {
+          display.textContent = slider.value;
+        });
+      }
+    }
+
+    // 切换背景类型显示
+    function toggleBgType() {
+      const bgType = document.getElementById('bg-type').value;
+      document.getElementById('bg-image-settings').style.display = bgType === 'image' ? 'block' : 'none';
+      document.getElementById('bg-gradient-settings').style.display = bgType === 'gradient' ? 'block' : 'none';
+    }
+
+    // 初始化滑块显示
+    function initBgSliders() {
+      bindSlider('bg-image-opacity', 'bg-image-opacity-val');
+      bindSlider('parallax-strength', 'parallax-strength-val');
+      bindSlider('zoom-sensitivity', 'zoom-sensitivity-val');
+      bindSlider('pan-strength', 'pan-strength-val');
+      bindSlider('cursor-size', 'cursor-size-val');
+      bindSlider('cursor-hover-size', 'cursor-hover-size-val');
+      bindSlider('cursor-border-opacity', 'cursor-border-opacity-val');
+      bindSlider('cursor-fill-opacity', 'cursor-fill-opacity-val');
+      bindSlider('cursor-speed', 'cursor-speed-val');
+      
+      bindSlider('anim-duration', 'anim-duration-val');
+      bindSlider('anim-delay', 'anim-delay-val');
+      bindSlider('page-transition-duration', 'page-transition-duration-val');
+      bindSlider('bg-loader-size', 'bg-loader-size-val');
+    }
+
+    // 页面加载时初始化滑块
+    initBgSliders();
+
+    async function loadBackgroundConfig() {
+      showStatus('bg-status', '正在加载配置...', 'info');
+      try {
+        const response = await fetch(`${API_BASE}/contents/src/data/background-config.json`, {
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            showStatus('bg-status', '配置文件不存在，将使用默认配置', 'warning');
+            return;
+          }
+          throw new Error('加载失败');
+        }
+        
+        const data = await response.json();
+        bgConfigSha = data.sha;
+        const content = decodeURIComponent(escape(atob(data.content)));
+        const config = JSON.parse(content);
+        
+        // 填充表单
+        document.getElementById('bg-enabled').checked = config.enabled;
+        
+        // 背景类型
+        const bgType = config.type || 'image';
+        document.getElementById('bg-type').value = bgType;
+        toggleBgType();
+
+        // 背景图片设置
+        if (config.image) {
+          // 处理多图片源
+          const sources = config.image.sources || (config.image.url ? [config.image.url] : []);
+          document.getElementById('bg-image-url').value = sources.join('\n');
+          document.getElementById('bg-image-opacity').value = config.image.opacity || 1;
+          document.getElementById('bg-image-opacity-val').textContent = config.image.opacity || 1;
+          document.getElementById('bg-image-size').value = config.image.size || 'cover';
+          document.getElementById('bg-image-position').value = config.image.position || 'center';
+        }
+        
+        // 渐变球设置
+        if (config.fallbackGradient) {
+          document.getElementById('gradient-fallback').checked = config.fallbackGradient.enabled;
+          if (config.fallbackGradient.color1) {
+            document.getElementById('g1-color').value = config.fallbackGradient.color1;
+          }
+          if (config.fallbackGradient.color2) {
+            document.getElementById('g2-color').value = config.fallbackGradient.color2;
+          }
+          if (config.fallbackGradient.color3) {
+            document.getElementById('g3-color').value = config.fallbackGradient.color3;
+          }
+        }
+        
+        // 鼠标交互设置
+        if (config.mouseInteraction) {
+          if (config.mouseInteraction.parallax) {
+            document.getElementById('parallax-enabled').checked = config.mouseInteraction.parallax.enabled;
+            document.getElementById('parallax-strength').value = config.mouseInteraction.parallax.strength;
+            document.getElementById('parallax-strength-val').textContent = config.mouseInteraction.parallax.strength;
+          }
+          if (config.mouseInteraction.zoom) {
+            document.getElementById('zoom-enabled').checked = config.mouseInteraction.zoom.enabled;
+            document.getElementById('zoom-sensitivity').value = config.mouseInteraction.zoom.sensitivity;
+            document.getElementById('zoom-sensitivity-val').textContent = config.mouseInteraction.zoom.sensitivity;
+          }
+          if (config.mouseInteraction.pan) {
+            document.getElementById('pan-enabled').checked = config.mouseInteraction.pan.enabled;
+            document.getElementById('pan-strength').value = config.mouseInteraction.pan.strength;
+            document.getElementById('pan-strength-val').textContent = config.mouseInteraction.pan.strength;
+          }
+        }
+
+        // 入场动画设置
+        if (config.entranceAnimation) {
+          document.getElementById('anim-enabled').checked = config.entranceAnimation.enabled !== false;
+          document.getElementById('anim-type').value = config.entranceAnimation.type || 'slide-up';
+          document.getElementById('anim-duration').value = config.entranceAnimation.duration || 0.8;
+          document.getElementById('anim-duration-val').textContent = config.entranceAnimation.duration || 0.8;
+          document.getElementById('anim-delay').value = config.entranceAnimation.delay || 0;
+          document.getElementById('anim-delay-val').textContent = config.entranceAnimation.delay || 0;
+          document.getElementById('anim-easing').value = config.entranceAnimation.easing || 'ease-out';
+        }
+        
+        // 鼠标跟随圆圈设置
+        if (config.cursorFollower) {
+          document.getElementById('cursor-enabled').checked = config.cursorFollower.enabled !== false;
+          document.getElementById('cursor-size').value = config.cursorFollower.size || 40;
+          document.getElementById('cursor-size-val').textContent = config.cursorFollower.size || 40;
+          document.getElementById('cursor-hover-size').value = config.cursorFollower.hoverSize || 60;
+          document.getElementById('cursor-hover-size-val').textContent = config.cursorFollower.hoverSize || 60;
+          
+          document.getElementById('cursor-border-color').value = config.cursorFollower.borderColor || '#ffffff';
+          
+          document.getElementById('cursor-border-opacity').value = config.cursorFollower.borderOpacity || 0.8;
+          document.getElementById('cursor-border-opacity-val').textContent = config.cursorFollower.borderOpacity || 0.8;
+          
+          document.getElementById('cursor-fill-color').value = config.cursorFollower.fillColor || '#ffffff';
+          
+          document.getElementById('cursor-fill-opacity').value = config.cursorFollower.fillOpacity || 0.2;
+          document.getElementById('cursor-fill-opacity-val').textContent = config.cursorFollower.fillOpacity || 0.2;
+          
+          document.getElementById('cursor-blend-mode').value = config.cursorFollower.blendMode || 'difference';
+          document.getElementById('cursor-speed').value = config.cursorFollower.followSpeed || 0.15;
+          document.getElementById('cursor-speed-val').textContent = config.cursorFollower.followSpeed || 0.15;
+        }
+
+        // 页面切换动画设置
+        if (config.pageTransition) {
+          document.getElementById('page-transition-enabled').checked = config.pageTransition.enabled !== false;
+          document.getElementById('page-transition-duration').value = config.pageTransition.duration || 600;
+          document.getElementById('page-transition-duration-val').textContent = config.pageTransition.duration || 600;
+          document.getElementById('page-transition-color').value = config.pageTransition.color || '#0f0f23';
+        }
+
+        // 背景加载进度条设置
+        if (config.bgLoader) {
+          document.getElementById('bg-loader-enabled').checked = config.bgLoader.enabled !== false;
+          document.getElementById('bg-loader-color').value = config.bgLoader.color || '#667eea';
+          document.getElementById('bg-loader-size').value = config.bgLoader.size || 60;
+          document.getElementById('bg-loader-size-val').textContent = config.bgLoader.size || 60;
+        }
+
+        showStatus('bg-status', '配置加载成功！', 'success');
+      } catch (error) {
+        showStatus('bg-status', '加载失败: ' + error.message, 'error');
+      }
+    }
+
+    async function saveBackgroundConfig() {
+      const bgType = document.getElementById('bg-type').value;
+      
+      const config = {
+        enabled: document.getElementById('bg-enabled').checked,
+        type: bgType,
+        image: bgType === 'image' ? {
+          url: document.getElementById('bg-image-url').value.split('\n')[0].trim(),
+          sources: document.getElementById('bg-image-url').value.split('\n').filter(s => s.trim()),
+          opacity: parseFloat(document.getElementById('bg-image-opacity').value),
+          size: document.getElementById('bg-image-size').value,
+          position: document.getElementById('bg-image-position').value,
+          repeat: 'no-repeat'
+        } : null,
+        fallbackGradient: bgType === 'image' ? {
+          enabled: document.getElementById('gradient-fallback').checked,
+          color1: document.getElementById('g1-color').value,
+          color2: document.getElementById('g2-color').value,
+          color3: document.getElementById('g3-color').value
+        } : null,
+        mouseInteraction: {
+          parallax: {
+            enabled: document.getElementById('parallax-enabled').checked,
+            strength: parseFloat(document.getElementById('parallax-strength').value)
+          },
+          zoom: {
+            enabled: document.getElementById('zoom-enabled').checked,
+            sensitivity: parseFloat(document.getElementById('zoom-sensitivity').value)
+          },
+          pan: {
+            enabled: document.getElementById('pan-enabled').checked,
+            strength: parseFloat(document.getElementById('pan-strength').value)
+          }
+        },
+        entranceAnimation: {
+          enabled: document.getElementById('anim-enabled').checked,
+          type: document.getElementById('anim-type').value,
+          duration: parseFloat(document.getElementById('anim-duration').value),
+          delay: parseFloat(document.getElementById('anim-delay').value),
+          easing: document.getElementById('anim-easing').value
+        },
+        cursorFollower: {
+          enabled: document.getElementById('cursor-enabled').checked,
+          size: parseInt(document.getElementById('cursor-size').value),
+          hoverSize: parseInt(document.getElementById('cursor-hover-size').value),
+          borderColor: document.getElementById('cursor-border-color').value,
+          borderOpacity: parseFloat(document.getElementById('cursor-border-opacity').value),
+          fillColor: document.getElementById('cursor-fill-color').value,
+          fillOpacity: parseFloat(document.getElementById('cursor-fill-opacity').value),
+          blendMode: document.getElementById('cursor-blend-mode').value,
+          followSpeed: parseFloat(document.getElementById('cursor-speed').value)
+        },
+        pageTransition: {
+          enabled: document.getElementById('page-transition-enabled').checked,
+          duration: parseInt(document.getElementById('page-transition-duration').value),
+          color: document.getElementById('page-transition-color').value
+        },
+        bgLoader: {
+          enabled: document.getElementById('bg-loader-enabled').checked,
+          color: document.getElementById('bg-loader-color').value,
+          size: parseInt(document.getElementById('bg-loader-size').value)
+        }
+      };
+
+      const jsonContent = JSON.stringify(config, null, 2);
+      
+      showStatus('bg-status', '正在保存...', 'info');
+      
+      try {
+        // 先检查文件是否存在
+        let sha = null;
+        const checkResponse = await fetch(`${API_BASE}/contents/src/data/background-config.json`, {
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+        });
+        
+        if (checkResponse.ok) {
+          const data = await checkResponse.json();
+          sha = data.sha;
+        }
+
+        // 保存文件
+        const saveResponse = await fetch(`${API_BASE}/contents/src/data/background-config.json`, {
+          method: 'PUT',
+          headers: { 'Authorization': `token ${GITHUB_TOKEN}`, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            message: '更新背景配置', 
+            content: utf8ToBase64(jsonContent), 
+            sha: sha 
+          })
+        });
+
+        if (!saveResponse.ok) {
+          throw new Error('保存失败');
+        }
+
+        showStatus('bg-status', '保存成功！等待部署...', 'success');
+      } catch (error) {
+        showStatus('bg-status', '保存失败: ' + error.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>
