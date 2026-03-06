@@ -35,7 +35,9 @@ jobs:
           set -e
           mkdir -p public/images
           if [ -d images ]; then
-            find images -maxdepth 1 -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" -o -iname "*.gif" -o -iname "*.webp" -o -iname "*.svg" \) -print -exec cp -f {} public/images/ \;
+            cp -afv images/. public/images/
+          else
+            echo "No ./images directory found; continuing with existing public/images assets."
           fi
           echo "Copied image files to public/images:"
           ls -lah public/images || true
