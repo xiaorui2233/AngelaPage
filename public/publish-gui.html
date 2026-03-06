@@ -6,20 +6,24 @@
   <title>Angela 博客发布工具</title>
   <style>
     body { font-family: 'Noto Sans SC', sans-serif; margin: 0; padding: 20px; background:#10172a; color:#e7ecff; }
-    .container { max-width: 980px; margin: 0 auto; }
+    .container { max-width: 1020px; margin: 0 auto; }
     .card { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
     .tabs { display:flex; gap:10px; margin-bottom:16px; flex-wrap: wrap; }
     .tab { padding:8px 14px; border:1px solid rgba(255,255,255,.2); border-radius:10px; cursor:pointer; }
     .tab.active { background:#5567ff; border-color:#5567ff; }
     .tab-content { display:none; }
     .tab-content.active { display:block; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     label { display:block; margin:10px 0 6px; }
     input,textarea,select { width:100%; box-sizing:border-box; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.08); color:#fff; }
+    input[type="checkbox"] { width:auto; transform: translateY(2px); margin-right: 6px; }
+    input[type="range"] { padding:0; }
+    input[type="color"] { padding:4px; height:42px; }
     textarea { min-height: 220px; }
-    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
     .btn { border:none; border-radius:10px; padding:10px 14px; cursor:pointer; margin-right:8px; margin-top: 8px; }
     .btn-primary{ background:#5868ff; color:#fff; }
     .btn-secondary{ background:rgba(255,255,255,.1); color:#fff; border:1px solid rgba(255,255,255,.2); }
+    .btn-danger{ background:#e45757; color:#fff; }
     .status { margin-top:10px; padding:10px; border-radius:10px; display:none; }
     .status.show{ display:block; }
     .status.ok{ background:rgba(76,175,80,.2); border:1px solid rgba(76,175,80,.4); }
@@ -29,6 +33,7 @@
     .img-item.active { border-color:#6d7bff; }
     .img-item img { width:100%; height:82px; object-fit:cover; display:block; }
     .help { color:#b7c2ef; font-size:13px; }
+    .sub { margin-top: 16px; padding-top: 10px; border-top:1px dashed rgba(255,255,255,.2); }
   </style>
 </head>
 <body>
@@ -38,7 +43,7 @@
     <div class="tabs">
       <div class="tab active" data-tab="new-post">发布新文章</div>
       <div class="tab" data-tab="manage">文章管理</div>
-      <div class="tab" data-tab="background">背景设置</div>
+      <div class="tab" data-tab="background">背景设置（图形化）</div>
     </div>
 
     <section class="tab-content active" id="new-post">
@@ -70,7 +75,6 @@
       </div>
       <div class="card" id="edit-card" style="display:none">
         <label>文件名</label><input id="edit-filename" readonly />
-
         <label>封面图 URL（可选）</label>
         <input id="edit-cover" placeholder="/AngelaPage/images/xxx.png 或 https://..." />
         <button class="btn btn-secondary" onclick="openImagePicker('edit-cover', true)">从仓库选择封面</button>
@@ -78,15 +82,88 @@
         <label>正文（Markdown）</label><textarea id="edit-content"></textarea>
         <button class="btn btn-secondary" onclick="openImagePicker('edit-content', false)">从仓库插入图片到正文</button>
         <button class="btn btn-primary" onclick="updateArticle()">保存更新</button>
+        <button class="btn btn-danger" onclick="deleteArticle()">删除文章</button>
         <div id="edit-status" class="status"></div>
       </div>
     </section>
 
     <section class="tab-content" id="background">
       <div class="card">
-        <p class="help">可直接编辑并提交 <code>src/data/background-config.json</code>。</p>
-        <label>背景配置 JSON</label>
-        <textarea id="bg-json" style="min-height:320px"></textarea>
+        <div class="row">
+          <div>
+            <label><input type="checkbox" id="bg-enabled" />启用背景</label>
+          </div>
+          <div>
+            <label>背景类型</label>
+            <select id="bg-type"><option value="image">图片</option><option value="gradient">渐变</option></select>
+          </div>
+        </div>
+
+        <div class="sub" id="bg-image-panel">
+          <label>背景图片 URL（每行一个，按顺序尝试）</label>
+          <textarea id="bg-image-sources" style="min-height:90px"></textarea>
+          <div class="row">
+            <div><label>透明度</label><input type="range" id="bg-image-opacity" min="0" max="1" step="0.05" value="0.12" /></div>
+            <div><label>尺寸</label><select id="bg-image-size"><option value="cover">cover</option><option value="contain">contain</option></select></div>
+          </div>
+          <label>位置</label><input id="bg-image-position" value="center" />
+        </div>
+
+        <div class="sub">
+          <label><input type="checkbox" id="gradient-enabled" />启用渐变球（兜底）</label>
+          <div class="row">
+            <div><label>颜色1</label><input type="color" id="g1" value="#667eea" /></div>
+            <div><label>颜色2</label><input type="color" id="g2" value="#764ba2" /></div>
+          </div>
+          <label>颜色3</label><input type="color" id="g3" value="#f093fb" />
+        </div>
+
+        <div class="sub">
+          <label>鼠标交互</label>
+          <div class="row">
+            <div><label><input type="checkbox" id="parallax-enabled" />视差</label><input type="range" id="parallax-strength" min="0" max="2" step="0.1" value="0.3" /></div>
+            <div><label><input type="checkbox" id="zoom-enabled" />缩放</label><input type="range" id="zoom-sensitivity" min="0" max="3" step="0.1" value="0.4" /></div>
+          </div>
+          <div><label><input type="checkbox" id="pan-enabled" />平移</label><input type="range" id="pan-strength" min="0" max="1" step="0.1" value="0.3" /></div>
+        </div>
+
+        <div class="sub">
+          <label>鼠标跟随圆圈</label>
+          <div class="row">
+            <div><label><input type="checkbox" id="cursor-enabled" />启用</label><input type="range" id="cursor-size" min="10" max="120" step="1" value="24" /></div>
+            <div><label>悬停大小</label><input type="range" id="cursor-hover-size" min="20" max="160" step="1" value="48" /></div>
+          </div>
+          <div class="row">
+            <div><label>边框颜色</label><input type="color" id="cursor-border-color" value="#ffffff" /></div>
+            <div><label>填充颜色</label><input type="color" id="cursor-fill-color" value="#ffffff" /></div>
+          </div>
+        </div>
+
+        <div class="sub">
+          <label>入场动画</label>
+          <div class="row">
+            <div><label><input type="checkbox" id="anim-enabled" />启用</label><select id="anim-type"><option value="slide-up">slide-up</option><option value="slide-down">slide-down</option><option value="fade">fade</option><option value="zoom-in">zoom-in</option></select></div>
+            <div><label>时长（秒）</label><input type="range" id="anim-duration" min="0.2" max="3" step="0.1" value="0.8" /></div>
+          </div>
+          <label>延迟（秒）</label><input type="range" id="anim-delay" min="0" max="2" step="0.1" value="0" />
+        </div>
+
+        <div class="sub">
+          <label>页面切换</label>
+          <div class="row">
+            <div><label><input type="checkbox" id="transition-enabled" />启用</label><input type="range" id="transition-duration" min="300" max="1500" step="50" value="600" /></div>
+            <div><label>遮罩颜色</label><input type="color" id="transition-color" value="#0f0f23" /></div>
+          </div>
+        </div>
+
+        <div class="sub">
+          <label>背景加载环</label>
+          <div class="row">
+            <div><label><input type="checkbox" id="loader-enabled" />启用</label><input type="range" id="loader-size" min="30" max="120" step="10" value="60" /></div>
+            <div><label>颜色</label><input type="color" id="loader-color" value="#667eea" /></div>
+          </div>
+        </div>
+
         <button class="btn btn-secondary" onclick="loadBackgroundConfig()">加载当前配置</button>
         <button class="btn btn-primary" onclick="saveBackgroundConfig()">保存背景配置</button>
         <div id="bg-status" class="status"></div>
@@ -200,9 +277,7 @@
         });
 
         showStatus('publish-status', `发布成功：${filename}`);
-      } catch (e) {
-        showStatus('publish-status', e.message, 'err');
-      }
+      } catch (e) { showStatus('publish-status', e.message, 'err'); }
     }
 
     async function loadArticles() {
@@ -240,19 +315,135 @@
       } catch (e) { showStatus('edit-status', e.message, 'err'); }
     }
 
+    async function deleteArticle() {
+      try {
+        const name = document.getElementById('edit-filename').value;
+        if (!name) return showStatus('edit-status', '请先加载文章', 'err');
+        if (!confirm(`确定删除 ${name} 吗？`)) return;
+        await fetch(`${API_BASE}/contents/src/content/posts/${name}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `token ${GITHUB_TOKEN}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ message: `删除文章: ${name}`, sha: currentFiles[name] })
+        });
+        showStatus('edit-status', '删除成功');
+        document.getElementById('edit-card').style.display = 'none';
+        loadArticles();
+      } catch (e) { showStatus('edit-status', e.message, 'err'); }
+    }
+
+    function fillBackgroundForm(config) {
+      document.getElementById('bg-enabled').checked = !!config.enabled;
+      document.getElementById('bg-type').value = config.type || 'image';
+      document.getElementById('bg-image-sources').value = (config.image?.sources || (config.image?.url ? [config.image.url] : [])).join('\n');
+      document.getElementById('bg-image-opacity').value = config.image?.opacity ?? 0.12;
+      document.getElementById('bg-image-size').value = config.image?.size || 'cover';
+      document.getElementById('bg-image-position').value = config.image?.position || 'center';
+
+      document.getElementById('gradient-enabled').checked = !!config.fallbackGradient?.enabled;
+      document.getElementById('g1').value = config.fallbackGradient?.color1 || '#667eea';
+      document.getElementById('g2').value = config.fallbackGradient?.color2 || '#764ba2';
+      document.getElementById('g3').value = config.fallbackGradient?.color3 || '#f093fb';
+
+      document.getElementById('parallax-enabled').checked = !!config.mouseInteraction?.parallax?.enabled;
+      document.getElementById('parallax-strength').value = config.mouseInteraction?.parallax?.strength ?? 0.3;
+      document.getElementById('zoom-enabled').checked = !!config.mouseInteraction?.zoom?.enabled;
+      document.getElementById('zoom-sensitivity').value = config.mouseInteraction?.zoom?.sensitivity ?? 0.4;
+      document.getElementById('pan-enabled').checked = !!config.mouseInteraction?.pan?.enabled;
+      document.getElementById('pan-strength').value = config.mouseInteraction?.pan?.strength ?? 0.3;
+
+      document.getElementById('cursor-enabled').checked = !!config.cursorFollower?.enabled;
+      document.getElementById('cursor-size').value = config.cursorFollower?.size ?? 24;
+      document.getElementById('cursor-hover-size').value = config.cursorFollower?.hoverSize ?? 48;
+      document.getElementById('cursor-border-color').value = config.cursorFollower?.borderColor || '#ffffff';
+      document.getElementById('cursor-fill-color').value = config.cursorFollower?.fillColor || '#ffffff';
+
+      document.getElementById('anim-enabled').checked = !!config.entranceAnimation?.enabled;
+      document.getElementById('anim-type').value = config.entranceAnimation?.type || 'slide-up';
+      document.getElementById('anim-duration').value = config.entranceAnimation?.duration ?? 0.8;
+      document.getElementById('anim-delay').value = config.entranceAnimation?.delay ?? 0;
+
+      document.getElementById('transition-enabled').checked = !!config.pageTransition?.enabled;
+      document.getElementById('transition-duration').value = config.pageTransition?.duration ?? 600;
+      document.getElementById('transition-color').value = config.pageTransition?.color || '#0f0f23';
+
+      document.getElementById('loader-enabled').checked = !!config.bgLoader?.enabled;
+      document.getElementById('loader-size').value = config.bgLoader?.size ?? 60;
+      document.getElementById('loader-color').value = config.bgLoader?.color || '#667eea';
+    }
+
+    function buildBackgroundConfigFromForm() {
+      const sources = document.getElementById('bg-image-sources').value.split('\n').map(s => s.trim()).filter(Boolean);
+      return {
+        enabled: document.getElementById('bg-enabled').checked,
+        type: document.getElementById('bg-type').value,
+        image: {
+          url: sources[0] || '',
+          sources,
+          opacity: parseFloat(document.getElementById('bg-image-opacity').value),
+          size: document.getElementById('bg-image-size').value,
+          position: document.getElementById('bg-image-position').value,
+          repeat: 'no-repeat'
+        },
+        fallbackGradient: {
+          enabled: document.getElementById('gradient-enabled').checked,
+          color1: document.getElementById('g1').value,
+          color2: document.getElementById('g2').value,
+          color3: document.getElementById('g3').value
+        },
+        mouseInteraction: {
+          parallax: { enabled: document.getElementById('parallax-enabled').checked, strength: parseFloat(document.getElementById('parallax-strength').value) },
+          zoom: { enabled: document.getElementById('zoom-enabled').checked, sensitivity: parseFloat(document.getElementById('zoom-sensitivity').value) },
+          pan: { enabled: document.getElementById('pan-enabled').checked, strength: parseFloat(document.getElementById('pan-strength').value) }
+        },
+        entranceAnimation: {
+          enabled: document.getElementById('anim-enabled').checked,
+          type: document.getElementById('anim-type').value,
+          duration: parseFloat(document.getElementById('anim-duration').value),
+          delay: parseFloat(document.getElementById('anim-delay').value),
+          easing: 'ease-out'
+        },
+        cursorFollower: {
+          enabled: document.getElementById('cursor-enabled').checked,
+          size: parseInt(document.getElementById('cursor-size').value, 10),
+          hoverSize: parseInt(document.getElementById('cursor-hover-size').value, 10),
+          borderColor: document.getElementById('cursor-border-color').value,
+          borderOpacity: 0.8,
+          fillColor: document.getElementById('cursor-fill-color').value,
+          fillOpacity: 0.18,
+          blendMode: 'difference',
+          followSpeed: 0.13
+        },
+        pageTransition: {
+          enabled: document.getElementById('transition-enabled').checked,
+          duration: parseInt(document.getElementById('transition-duration').value, 10),
+          color: document.getElementById('transition-color').value
+        },
+        bgLoader: {
+          enabled: document.getElementById('loader-enabled').checked,
+          color: document.getElementById('loader-color').value,
+          size: parseInt(document.getElementById('loader-size').value, 10)
+        }
+      };
+    }
+
     async function loadBackgroundConfig() {
       try {
         const data = await gh('src/data/background-config.json');
         currentFiles['background-config.json'] = data.sha;
-        document.getElementById('bg-json').value = b64ToUtf8(data.content);
+        const config = JSON.parse(b64ToUtf8(data.content));
+        fillBackgroundForm(config);
         showStatus('bg-status', '配置已加载');
       } catch (e) { showStatus('bg-status', e.message, 'err'); }
     }
 
     async function saveBackgroundConfig() {
       try {
-        const text = document.getElementById('bg-json').value;
-        JSON.parse(text);
+        const config = buildBackgroundConfigFromForm();
+        const text = JSON.stringify(config, null, 2);
         await gh('src/data/background-config.json', {
           method: 'PUT',
           body: JSON.stringify({ message: '更新背景配置', content: utf8ToBase64(text), sha: currentFiles['background-config.json'] })
