@@ -124,7 +124,8 @@
             <div><label><input type="checkbox" id="parallax-enabled" />视差</label><input type="range" id="parallax-strength" min="0" max="2" step="0.1" value="0.3" /></div>
             <div><label><input type="checkbox" id="zoom-enabled" />缩放</label><input type="range" id="zoom-sensitivity" min="0" max="3" step="0.1" value="0.4" /></div>
           </div>
-          <div><label><input type="checkbox" id="pan-enabled" />平移</label><input type="range" id="pan-strength" min="0" max="1" step="0.1" value="0.3" /></div>
+          <div><label><input type="checkbox" id="pan-enabled" />平移（兼容旧配置）</label><input type="range" id="pan-strength" min="0" max="1" step="0.1" value="0.3" /></div>
+          <div><label><input type="checkbox" id="image-follow-enabled" />背景图片跟随鼠标偏移</label><input type="range" id="image-follow-strength" min="0" max="1.5" step="0.05" value="0.3" /></div>
         </div>
 
         <div class="sub">
@@ -199,6 +200,7 @@
         document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
         tab.classList.add('active');
         document.getElementById(tab.dataset.tab).classList.add('active');
+        if (tab.dataset.tab === 'background') loadBackgroundConfig();
       };
     });
 
@@ -354,6 +356,8 @@
       document.getElementById('zoom-sensitivity').value = config.mouseInteraction?.zoom?.sensitivity ?? 0.4;
       document.getElementById('pan-enabled').checked = !!config.mouseInteraction?.pan?.enabled;
       document.getElementById('pan-strength').value = config.mouseInteraction?.pan?.strength ?? 0.3;
+      document.getElementById('image-follow-enabled').checked = !!(config.mouseInteraction?.imageFollow?.enabled ?? config.mouseInteraction?.pan?.enabled);
+      document.getElementById('image-follow-strength').value = config.mouseInteraction?.imageFollow?.strength ?? config.mouseInteraction?.pan?.strength ?? 0.3;
 
       document.getElementById('cursor-enabled').checked = !!config.cursorFollower?.enabled;
       document.getElementById('cursor-size').value = config.cursorFollower?.size ?? 24;
@@ -397,7 +401,8 @@
         mouseInteraction: {
           parallax: { enabled: document.getElementById('parallax-enabled').checked, strength: parseFloat(document.getElementById('parallax-strength').value) },
           zoom: { enabled: document.getElementById('zoom-enabled').checked, sensitivity: parseFloat(document.getElementById('zoom-sensitivity').value) },
-          pan: { enabled: document.getElementById('pan-enabled').checked, strength: parseFloat(document.getElementById('pan-strength').value) }
+          pan: { enabled: document.getElementById('pan-enabled').checked, strength: parseFloat(document.getElementById('pan-strength').value) },
+          imageFollow: { enabled: document.getElementById('image-follow-enabled').checked, strength: parseFloat(document.getElementById('image-follow-strength').value) }
         },
         entranceAnimation: {
           enabled: document.getElementById('anim-enabled').checked,
