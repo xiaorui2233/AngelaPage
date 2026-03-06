@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Angela 博客发布工具</title>
+  <style>
+    body { font-family: 'Noto Sans SC', sans-serif; margin: 0; padding: 20px; background:#10172a; color:#e7ecff; }
+    .container { max-width: 980px; margin: 0 auto; }
+    .card { background: rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+    .tabs { display:flex; gap:10px; margin-bottom:16px; flex-wrap: wrap; }
+    .tab { padding:8px 14px; border:1px solid rgba(255,255,255,.2); border-radius:10px; cursor:pointer; }
+    .tab.active { background:#5567ff; border-color:#5567ff; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    label { display:block; margin:10px 0 6px; }
+    input,textarea,select { width:100%; box-sizing:border-box; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.08); color:#fff; }
+    textarea { min-height: 220px; }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .btn { border:none; border-radius:10px; padding:10px 14px; cursor:pointer; margin-right:8px; margin-top: 8px; }
+    .btn-primary{ background:#5868ff; color:#fff; }
+    .btn-secondary{ background:rgba(255,255,255,.1); color:#fff; border:1px solid rgba(255,255,255,.2); }
+    .status { margin-top:10px; padding:10px; border-radius:10px; display:none; }
+    .status.show{ display:block; }
+    .status.ok{ background:rgba(76,175,80,.2); border:1px solid rgba(76,175,80,.4); }
+    .status.err{ background:rgba(244,67,54,.2); border:1px solid rgba(244,67,54,.4); }
+    .img-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:10px; }
+    .img-item { border:2px solid transparent; border-radius:10px; overflow:hidden; cursor:pointer; }
+    .img-item.active { border-color:#6d7bff; }
+    .img-item img { width:100%; height:82px; object-fit:cover; display:block; }
+    .help { color:#b7c2ef; font-size:13px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Angela 博客发布工具</h1>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="new-post">发布新文章</div>
+      <div class="tab" data-tab="manage">文章管理</div>
+      <div class="tab" data-tab="background">背景设置</div>
+    </div>
+
+    <section class="tab-content active" id="new-post">
+      <div class="card">
+        <label>标题</label><input id="title" />
+        <label>描述</label><input id="description" />
+        <div class="row">
+          <div><label>分类</label><input id="category" value="随笔" /></div>
+          <div><label>标签（逗号分隔）</label><input id="tags" placeholder="前端, Astro" /></div>
+        </div>
+
+        <label>封面图 URL（可选）</label>
+        <input id="cover" placeholder="/AngelaPage/images/xxx.png 或 https://..." />
+        <button class="btn btn-secondary" onclick="openImagePicker('cover', true)">从仓库选择封面</button>
+
+        <label>正文（Markdown）</label>
+        <textarea id="content"></textarea>
+        <p class="help">可插入图片语法：<code>![图片描述](/AngelaPage/images/xxx.png)</code></p>
+        <button class="btn btn-secondary" onclick="openImagePicker('content', false)">从仓库插入图片到正文</button>
+        <button class="btn btn-primary" onclick="publishPost()">发布文章</button>
+        <div id="publish-status" class="status"></div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="manage">
+      <div class="card">
+        <button class="btn btn-secondary" onclick="loadArticles()">加载文章列表</button>
+        <div id="article-list"></div>
+      </div>
+      <div class="card" id="edit-card" style="display:none">
+        <label>文件名</label><input id="edit-filename" readonly />
+
+        <label>封面图 URL（可选）</label>
+        <input id="edit-cover" placeholder="/AngelaPage/images/xxx.png 或 https://..." />
+        <button class="btn btn-secondary" onclick="openImagePicker('edit-cover', true)">从仓库选择封面</button>
+
+        <label>正文（Markdown）</label><textarea id="edit-content"></textarea>
+        <button class="btn btn-secondary" onclick="openImagePicker('edit-content', false)">从仓库插入图片到正文</button>
+        <button class="btn btn-primary" onclick="updateArticle()">保存更新</button>
+        <div id="edit-status" class="status"></div>
+      </div>
+    </section>
+
+    <section class="tab-content" id="background">
+      <div class="card">
+        <p class="help">可直接编辑并提交 <code>src/data/background-config.json</code>。</p>
+        <label>背景配置 JSON</label>
+        <textarea id="bg-json" style="min-height:320px"></textarea>
+        <button class="btn btn-secondary" onclick="loadBackgroundConfig()">加载当前配置</button>
+        <button class="btn btn-primary" onclick="saveBackgroundConfig()">保存背景配置</button>
+        <div id="bg-status" class="status"></div>
+      </div>
+    </section>
+
+    <div class="card" id="image-picker" style="display:none">
+      <h3>选择仓库图片</h3>
+      <div id="image-list" class="img-grid"></div>
+      <button class="btn btn-primary" onclick="insertSelectedImage()">插入</button>
+      <button class="btn btn-secondary" onclick="closeImagePicker()">取消</button>
+    </div>
+  </div>
+
+  <script>
+    const REPO_OWNER = 'xiaorui2233';
+    const REPO_NAME = 'AngelaPage';
+    const API_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+    let GITHUB_TOKEN = localStorage.getItem('github_token') || '';
+    if (!GITHUB_TOKEN) {
+      GITHUB_TOKEN = prompt('请输入 GitHub Token');
+      if (GITHUB_TOKEN) localStorage.setItem('github_token', GITHUB_TOKEN);
+    }
+
+    const currentFiles = {};
+    let imageTarget = '';
+    let selectedImagePath = '';
+    let pickerAsCover = false;
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.onclick = () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      };
+    });
+
+    function showStatus(id, msg, type='ok') {
+      const el = document.getElementById(id);
+      el.className = `status show ${type}`;
+      el.textContent = msg;
+    }
+
+    function utf8ToBase64(str) { return btoa(unescape(encodeURIComponent(str))); }
+    function b64ToUtf8(str) { return decodeURIComponent(escape(atob(str))); }
+    function slugify(text) { return text.toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+
+    function parseFrontmatter(md) {
+      const m = md.match(/^---\n([\s\S]*?)\n---\n?/);
+      if (!m) return { frontmatter: '', body: md };
+      return { frontmatter: m[1], body: md.slice(m[0].length) };
+    }
+
+    function getCoverFromMarkdown(md) {
+      const { frontmatter } = parseFrontmatter(md);
+      if (!frontmatter) return '';
+      const m = frontmatter.match(/^cover:\s*"?([^"\n]+)"?\s*$/m);
+      return m ? m[1].trim() : '';
+    }
+
+    function upsertCover(md, cover) {
+      const parsed = parseFrontmatter(md);
+      if (!parsed.frontmatter) return md;
+      let fm = parsed.frontmatter;
+      if (/^cover:\s*/m.test(fm)) {
+        fm = fm.replace(/^cover:\s*.*$/m, cover ? `cover: "${cover}"` : '');
+      } else if (cover) {
+        fm += `\ncover: "${cover}"`;
+      }
+      fm = fm.split('\n').filter(Boolean).join('\n');
+      return `---\n${fm}\n---\n\n${parsed.body.replace(/^\n+/, '')}`;
+    }
+
+    async function gh(path, options={}) {
+      const response = await fetch(`${API_BASE}/contents/${path}`, {
+        ...options,
+        headers: {
+          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json',
+          ...(options.headers || {})
+        }
+      });
+      if (!response.ok) throw new Error(`GitHub API error ${response.status}`);
+      return response.json();
+    }
+
+    async function publishPost() {
+      try {
+        const title = document.getElementById('title').value.trim();
+        const description = document.getElementById('description').value.trim();
+        const category = document.getElementById('category').value.trim() || '随笔';
+        const tags = (document.getElementById('tags').value || '').split(',').map(s => s.trim()).filter(Boolean);
+        const cover = document.getElementById('cover').value.trim();
+        const content = document.getElementById('content').value;
+        if (!title || !description || !content.trim()) return showStatus('publish-status', '请填写标题、描述和正文', 'err');
+
+        const slug = slugify(title);
+        const filename = `${slug}.md`;
+        const d = new Date();
+        const date = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        const fm = `---\ntitle: "${title}"\ndescription: "${description}"\npubDate: ${date}\ntags: [${(tags.length?tags:['默认']).map(t => `"${t}"`).join(', ')}]\ncategory: "${category}"${cover ? `\ncover: "${cover}"` : ''}\n---\n\n${content}`;
+
+        let sha = null;
+        try { const old = await gh(`src/content/posts/${filename}`); sha = old.sha; } catch {}
+
+        await gh(`src/content/posts/${filename}`, {
+          method: 'PUT',
+          body: JSON.stringify({ message: `发布文章: ${title}`, content: utf8ToBase64(fm), sha })
+        });
+
+        showStatus('publish-status', `发布成功：${filename}`);
+      } catch (e) {
+        showStatus('publish-status', e.message, 'err');
+      }
+    }
+
+    async function loadArticles() {
+      try {
+        const list = await gh('src/content/posts');
+        const md = list.filter(f => f.name.endsWith('.md'));
+        document.getElementById('article-list').innerHTML = md.map(f => `<p><a href="#" onclick="editArticle('${f.name}');return false;">${f.name}</a></p>`).join('');
+      } catch (e) { showStatus('edit-status', e.message, 'err'); }
+    }
+
+    async function editArticle(name) {
+      try {
+        const file = await gh(`src/content/posts/${name}`);
+        const text = b64ToUtf8(file.content);
+        currentFiles[name] = file.sha;
+        document.getElementById('edit-filename').value = name;
+        document.getElementById('edit-content').value = text;
+        document.getElementById('edit-cover').value = getCoverFromMarkdown(text);
+        document.getElementById('edit-card').style.display = 'block';
+      } catch (e) { showStatus('edit-status', e.message, 'err'); }
+    }
+
+    async function updateArticle() {
+      try {
+        const name = document.getElementById('edit-filename').value;
+        const body = document.getElementById('edit-content').value;
+        const cover = document.getElementById('edit-cover').value.trim();
+        const finalMd = upsertCover(body, cover);
+
+        await gh(`src/content/posts/${name}`, {
+          method: 'PUT',
+          body: JSON.stringify({ message: `更新文章: ${name}`, content: utf8ToBase64(finalMd), sha: currentFiles[name] })
+        });
+        showStatus('edit-status', '更新成功');
+      } catch (e) { showStatus('edit-status', e.message, 'err'); }
+    }
+
+    async function loadBackgroundConfig() {
+      try {
+        const data = await gh('src/data/background-config.json');
+        currentFiles['background-config.json'] = data.sha;
+        document.getElementById('bg-json').value = b64ToUtf8(data.content);
+        showStatus('bg-status', '配置已加载');
+      } catch (e) { showStatus('bg-status', e.message, 'err'); }
+    }
+
+    async function saveBackgroundConfig() {
+      try {
+        const text = document.getElementById('bg-json').value;
+        JSON.parse(text);
+        await gh('src/data/background-config.json', {
+          method: 'PUT',
+          body: JSON.stringify({ message: '更新背景配置', content: utf8ToBase64(text), sha: currentFiles['background-config.json'] })
+        });
+        showStatus('bg-status', '背景配置已保存');
+      } catch (e) { showStatus('bg-status', e.message, 'err'); }
+    }
+
+    async function openImagePicker(targetId, asCover) {
+      imageTarget = targetId;
+      pickerAsCover = !!asCover;
+      selectedImagePath = '';
+      document.getElementById('image-picker').style.display = 'block';
+      const list = document.getElementById('image-list');
+      list.innerHTML = '加载中...';
+      try {
+        const files = await gh('images');
+        const imageFiles = files.filter(f => /\.(png|jpe?g|gif|webp|svg)$/i.test(f.name));
+        list.innerHTML = imageFiles.map((f) => `
+          <div class="img-item" onclick="selectImage('/AngelaPage/images/${f.name}', this)">
+            <img src="${f.download_url}" alt="${f.name}" />
+          </div>`).join('');
+      } catch (e) {
+        list.innerHTML = `<p>${e.message}</p>`;
+      }
+    }
+
+    function selectImage(path, el) {
+      selectedImagePath = path;
+      document.querySelectorAll('.img-item').forEach(i => i.classList.remove('active'));
+      el.classList.add('active');
+    }
+
+    function insertSelectedImage() {
+      if (!selectedImagePath || !imageTarget) return;
+      const input = document.getElementById(imageTarget);
+      if (pickerAsCover) {
+        input.value = selectedImagePath;
+      } else {
+        const snippet = `\n![图片描述](${selectedImagePath})\n`;
+        const start = input.selectionStart || input.value.length;
+        const end = input.selectionEnd || input.value.length;
+        input.value = input.value.slice(0, start) + snippet + input.value.slice(end);
+      }
+      input.focus();
+      closeImagePicker();
+    }
+
+    function closeImagePicker() {
+      document.getElementById('image-picker').style.display = 'none';
+    }
+  </script>
+</body>
+</html>

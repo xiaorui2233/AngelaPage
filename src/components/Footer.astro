@@ -1,0 +1,41 @@
+---
+const year = new Date().getFullYear();
+const base = '/AngelaPage';
+---
+
+<footer class="site-footer">
+  <div class="shell footer-grid">
+    <div>
+      <h3>Angela Blog</h3>
+      <p>记录学习、生活与创作。</p>
+    </div>
+    <div>
+      <h4>Site</h4>
+      <ul>
+        <li><a href={`${base}/`}>Home</a></li>
+        <li><a href={`${base}/archive`}>Blog</a></li>
+        <li><a href={`${base}/tags`}>Tags</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Social</h4>
+      <ul>
+        <li><a href="https://github.com/xiaorui2233" target="_blank">GitHub</a></li>
+        <li><a href={`${base}/rss.xml`}>RSS</a></li>
+      </ul>
+    </div>
+  </div>
+  <p class="copyright">© {year} Angela. Built with Astro.</p>
+</footer>
+
+<style>
+  .site-footer { border-top: 1px solid var(--border); padding-top: 2rem; margin-top: 4rem; }
+  .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 2rem; }
+  h3, h4 { margin: 0 0 0.8rem; }
+  ul { list-style: none; padding: 0; margin: 0; }
+  li + li { margin-top: 0.4rem; }
+  a { color: var(--text-secondary); text-decoration: none; }
+  a:hover { color: var(--text-primary); }
+  .copyright { text-align: center; color: var(--text-muted); margin: 2rem 0 1rem; font-size: 0.9rem; }
+  @media (max-width: 780px) { .footer-grid { grid-template-columns: 1fr; } }
+</style>
