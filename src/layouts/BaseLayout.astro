@@ -385,6 +385,7 @@ const config = backgroundConfig;
     --text-secondary: #4f5877;
     --text-muted: #7f88a8;
     --accent: #6366f1;
+    --accent-secondary: #22d3ee;
   }
 
   :root[data-theme='dark'] {
@@ -398,6 +399,7 @@ const config = backgroundConfig;
     --text-secondary: #b6bce0;
     --text-muted: #8f96bb;
     --accent: #8b9bff;
+    --accent-secondary: #38bdf8;
   }
 
   * { box-sizing: border-box; }
@@ -407,6 +409,34 @@ const config = backgroundConfig;
     font-family: 'Noto Sans SC', system-ui, sans-serif;
     background: var(--bg);
     color: var(--text-primary);
+  }
+
+
+  /*
+   * Hard fallback for list/input cards on non-home pages.
+   * Prevents occasional missing card backgrounds when scoped styles or CSS variables
+   * are stale in browser cache.
+   */
+  .archive-item,
+  .friend-card,
+  .contact-section,
+  .tag-item,
+  .post-item,
+  .result-item,
+  .search-box input {
+    background: var(--glass-bg, rgba(255, 255, 255, 0.42));
+    border: 1px solid var(--glass-border, rgba(217, 222, 239, 0.72));
+  }
+
+  :root[data-theme='dark'] .archive-item,
+  :root[data-theme='dark'] .friend-card,
+  :root[data-theme='dark'] .contact-section,
+  :root[data-theme='dark'] .tag-item,
+  :root[data-theme='dark'] .post-item,
+  :root[data-theme='dark'] .result-item,
+  :root[data-theme='dark'] .search-box input {
+    background: var(--glass-bg, rgba(22, 27, 47, 0.46));
+    border: 1px solid var(--glass-border, rgba(74, 86, 130, 0.72));
   }
 
   .background {

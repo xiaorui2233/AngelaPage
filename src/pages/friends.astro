@@ -75,10 +75,10 @@ const friends = [
     align-items: center;
     gap: 1rem;
     padding: 1.5rem;
-    background: var(--glass-bg);
+    background: var(--glass-bg, rgba(255, 255, 255, 0.42));
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
+    border: 1px solid var(--glass-border, rgba(217, 222, 239, 0.72));
     border-radius: 16px;
     text-decoration: none;
     color: inherit;
@@ -126,10 +126,10 @@ const friends = [
   }
 
   .contact-section {
-    background: var(--glass-bg);
+    background: var(--glass-bg, rgba(255, 255, 255, 0.42));
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid var(--glass-border);
+    border: 1px solid var(--glass-border, rgba(217, 222, 239, 0.72));
     border-radius: 16px;
     padding: 2rem;
     text-align: center;
