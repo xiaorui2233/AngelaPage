@@ -465,7 +465,12 @@
       const list = document.getElementById('image-list');
       list.innerHTML = '加载中...';
       try {
-        const files = await gh('images');
+        let files = [];
+        try {
+          files = await gh('public/images');
+        } catch {
+          files = await gh('images');
+        }
         const imageFiles = files.filter(f => /\.(png|jpe?g|gif|webp|svg)$/i.test(f.name));
         list.innerHTML = imageFiles.map((f) => `
           <div class="img-item" onclick="selectImage('/AngelaPage/images/${f.name}', this)">
