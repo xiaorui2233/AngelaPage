@@ -165,6 +165,7 @@
           </div>
         </div>
 
+        <button class="btn btn-secondary" onclick="applyRecommendedBackgroundSources()">套用推荐背景源</button>
         <button class="btn btn-secondary" onclick="loadBackgroundConfig()">加载当前配置</button>
         <button class="btn btn-primary" onclick="saveBackgroundConfig()">保存背景配置</button>
         <div id="bg-status" class="status"></div>
@@ -174,6 +175,12 @@
     <div class="card" id="image-picker" style="display:none">
       <h3>选择仓库图片</h3>
       <div id="image-list" class="img-grid"></div>
+      <label>插入格式</label>
+      <select id="image-link-mode">
+        <option value="relative" selected>相对路径（推荐，站内）</option>
+        <option value="absolute">绝对地址（https://xiaorui2233.github.io/...）</option>
+      </select>
+      <p class="help">相对路径便于跨环境预览，绝对地址适合外部引用。</p>
       <button class="btn btn-primary" onclick="insertSelectedImage()">插入</button>
       <button class="btn btn-secondary" onclick="closeImagePicker()">取消</button>
     </div>
@@ -183,6 +190,9 @@
     const REPO_OWNER = 'xiaorui2233';
     const REPO_NAME = 'AngelaPage';
     const API_BASE = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+    const PAGES_ORIGIN = `https://${REPO_OWNER}.github.io`;
+    const SITE_BASE = '/AngelaPage';
+    const SITE_IMAGE_BASE = `${PAGES_ORIGIN}${SITE_BASE}/images`;
     let GITHUB_TOKEN = localStorage.getItem('github_token') || '';
     if (!GITHUB_TOKEN) {
       GITHUB_TOKEN = prompt('请输入 GitHub Token');
@@ -213,6 +223,13 @@
     function utf8ToBase64(str) { return btoa(unescape(encodeURIComponent(str))); }
     function b64ToUtf8(str) { return decodeURIComponent(escape(atob(str))); }
     function slugify(text) { return text.toLowerCase().replace(/[^\u4e00-\u9fa5a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+
+    function buildRepoImagePath(name) { return `${SITE_BASE}/images/${name}`; }
+    function toAbsoluteImageUrl(path) {
+      if (!path) return '';
+      if (/^https?:\/\//i.test(path)) return path;
+      return `${PAGES_ORIGIN}${path.startsWith('/') ? path : `/${path}`}`;
+    }
 
     function parseFrontmatter(md) {
       const m = md.match(/^---\n([\s\S]*?)\n---\n?/);
@@ -435,6 +452,17 @@
       };
     }
 
+
+    function applyRecommendedBackgroundSources() {
+      const defaults = [
+        `${SITE_IMAGE_BASE}/background.png`,
+        `${SITE_BASE}/images/background.png`,
+        'https://images.alphacoders.com/114/thumb-1920-1145870.png'
+      ];
+      document.getElementById('bg-image-sources').value = defaults.join('\n');
+      showStatus('bg-status', '已套用推荐背景源（绝对地址优先 + 站内回退）');
+    }
+
     async function loadBackgroundConfig() {
       try {
         const data = await gh('src/data/background-config.json');
@@ -473,7 +501,7 @@
         }
         const imageFiles = files.filter(f => /\.(png|jpe?g|gif|webp|svg)$/i.test(f.name));
         list.innerHTML = imageFiles.map((f) => `
-          <div class="img-item" onclick="selectImage('/AngelaPage/images/${f.name}', this)">
+          <div class="img-item" onclick="selectImage(buildRepoImagePath('${f.name}'), this)">
             <img src="${f.download_url}" alt="${f.name}" />
           </div>`).join('');
       } catch (e) {
@@ -490,10 +518,12 @@
     function insertSelectedImage() {
       if (!selectedImagePath || !imageTarget) return;
       const input = document.getElementById(imageTarget);
+      const mode = document.getElementById('image-link-mode')?.value || 'relative';
+      const finalPath = mode === 'absolute' ? toAbsoluteImageUrl(selectedImagePath) : selectedImagePath;
       if (pickerAsCover) {
-        input.value = selectedImagePath;
+        input.value = finalPath;
       } else {
-        const snippet = `\n![图片描述](${selectedImagePath})\n`;
+        const snippet = `\n![图片描述](${finalPath})\n`;
         const start = input.selectionStart || input.value.length;
         const end = input.selectionEnd || input.value.length;
         input.value = input.value.slice(0, start) + snippet + input.value.slice(end);
