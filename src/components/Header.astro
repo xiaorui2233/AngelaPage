@@ -1,4 +1,4 @@
----
+﻿---
 const base = '/AngelaPage';
 const navItems = [
   { href: `${base}/`, label: 'Home' },
@@ -8,6 +8,10 @@ const navItems = [
   { href: `${base}/about`, label: 'About' },
   { href: `${base}/search`, label: 'Search' }
 ];
+
+const repoOwner = 'xiaorui2233';
+const repoName = 'AngelaPage';
+const repoUrl = `https://github.com/${repoOwner}/${repoName}`;
 
 const pathname = Astro.url.pathname;
 ---
@@ -23,9 +27,74 @@ const pathname = Astro.url.pathname;
         );
       })}
     </nav>
-    <button class="theme-toggle" data-theme-toggle aria-label="切换明暗模式">🌓</button>
+    <div class="header-actions">
+      <button class="star-btn" id="star-btn" type="button" data-repo-url={repoUrl} aria-label="Star this project">
+        <span class="star-icon">★</span>
+        <span class="star-text">Star</span>
+        <span class="star-count" id="star-count">--</span>
+      </button>
+      <button class="theme-toggle" data-theme-toggle aria-label="切换明暗模式">🌓</button>
+    </div>
   </div>
 </header>
+
+<script is:inline>
+  (() => {
+    const owner = 'xiaorui2233';
+    const repo = 'AngelaPage';
+    const repoUrl = `https://github.com/${owner}/${repo}`;
+    const btn = document.getElementById('star-btn');
+    const countEl = document.getElementById('star-count');
+    if (!btn || !countEl) return;
+
+    const setCount = (n) => {
+      if (typeof n !== 'number' || Number.isNaN(n)) {
+        countEl.textContent = '--';
+      } else {
+        countEl.textContent = n.toString();
+      }
+    };
+
+    const fetchCount = async () => {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        setCount(data.stargazers_count);
+      } catch {}
+    };
+
+    const tryStar = async () => {
+      const token = localStorage.getItem('github_token') || '';
+      if (!token) {
+        window.open(repoUrl, '_blank');
+        return;
+      }
+      try {
+        const res = await fetch(`https://api.github.com/user/starred/${owner}/${repo}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${token}`,
+            'Accept': 'application/vnd.github+json'
+          }
+        });
+        if (res.status === 204) {
+          btn.classList.add('starred');
+          const current = parseInt(countEl.textContent || '0', 10);
+          if (!Number.isNaN(current)) setCount(current + 1);
+          return;
+        }
+        if (res.status === 401 || res.status === 403) {
+          localStorage.removeItem('github_token');
+        }
+      } catch {}
+      window.open(repoUrl, '_blank');
+    };
+
+    btn.addEventListener('click', tryStar);
+    fetchCount();
+  })();
+</script>
 
 <style>
   .site-header { position: sticky; top: 0; z-index: 50; backdrop-filter: blur(12px); background: color-mix(in oklab, var(--bg) 85%, transparent); border-bottom: 1px solid var(--border); }
@@ -35,6 +104,12 @@ const pathname = Astro.url.pathname;
   .main-nav { display: flex; gap: 0.25rem; flex-wrap: wrap; }
   .nav-link { text-decoration: none; color: var(--text-secondary); padding: 0.4rem 0.7rem; border-radius: 10px; font-size: 0.95rem; transition: 0.2s ease; }
   .nav-link:hover, .nav-link.active { color: var(--text-primary); background: var(--surface); }
+  .header-actions { display: flex; align-items: center; gap: 0.6rem; }
+  .star-btn { display: inline-flex; align-items: center; gap: 0.4rem; border: 1px solid var(--border); background: var(--card); color: var(--text-primary); border-radius: 10px; padding: 0 0.6rem; height: 36px; cursor: pointer; }
+  .star-icon { font-size: 0.95rem; color: var(--accent); }
+  .star-text { font-size: 0.9rem; }
+  .star-count { font-size: 0.85rem; padding: 0.1rem 0.4rem; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); }
+  .star-btn.starred { border-color: color-mix(in oklab, var(--accent) 50%, var(--border)); }
   .theme-toggle { border: 1px solid var(--border); background: var(--card); color: var(--text-primary); border-radius: 10px; height: 36px; width: 42px; cursor: pointer; }
   @media (max-width: 780px) { .header-inner { flex-wrap: wrap; padding-block: 0.8rem; } .main-nav { order: 3; width: 100%; justify-content: center; } }
 </style>
