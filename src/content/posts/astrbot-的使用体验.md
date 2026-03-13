@@ -4,7 +4,7 @@ description: "使用体验还不错"
 pubDate: 2026-03-08
 tags: ["默认"]
 category: "随笔"
-cover: "/AngelaPage/images/background.png"
+cover: "/AngelaPage/images/QQ20260313-234801.png"
 ---
 
 ## 使用体验
