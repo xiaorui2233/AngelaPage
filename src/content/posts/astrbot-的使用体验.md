@@ -19,6 +19,7 @@ cover: "/AngelaPage/images/QQ20260313-234801.png"
 
 👉 https://discord.gg/9rsZ3gpk
 
-## 示例图片
+## like this
 
-![Angela 背景](/AngelaPage/images/background.png)
+
+![图片描述](https://xiaorui2233.github.io/AngelaPage/images/QQ20260313-234801.png)
