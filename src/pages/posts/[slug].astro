@@ -1,4 +1,4 @@
----
+﻿---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
@@ -92,7 +92,9 @@ const relatedPosts = allPosts
 
   <script is:inline>
     (() => {
-      const imgs = document.querySelectorAll('.prose img');
+      const root = document.querySelector('.prose');
+      if (!root) return;
+      const imgs = root.querySelectorAll('img');
       imgs.forEach((img) => {
         const src = img.getAttribute('src') || '';
         if (src.startsWith('/images/')) {
@@ -101,6 +103,93 @@ const relatedPosts = allPosts
           img.setAttribute('src', `/AngelaPage/${src.replace(/^\/+/, '')}`);
         }
         img.setAttribute('loading', 'lazy');
+
+        if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(src)) {
+          const video = document.createElement('video');
+          video.setAttribute('src', img.getAttribute('src') || src);
+          video.setAttribute('controls', '');
+          video.setAttribute('preload', 'metadata');
+          if (img.getAttribute('alt')) video.setAttribute('title', img.getAttribute('alt'));
+          img.replaceWith(video);
+        }
+      });
+
+      const wrapMedia = (el) => {
+        if (!el || el.closest('.video-embed')) return;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'video-embed';
+        el.parentNode?.insertBefore(wrapper, el);
+        wrapper.appendChild(el);
+      };
+
+      root.querySelectorAll('iframe').forEach(wrapMedia);
+      root.querySelectorAll('video').forEach(wrapMedia);
+
+      const isStandaloneLink = (anchor) => {
+        const parent = anchor?.parentElement;
+        if (!parent || parent.tagName.toLowerCase() !== 'p') return false;
+        if (parent.querySelectorAll('a').length !== 1) return false;
+        return parent.textContent?.trim() === anchor.textContent?.trim();
+      };
+
+      const isMarkedEmbed = (anchor) => {
+        const text = anchor?.textContent?.trim().toLowerCase() || '';
+        return text === 'embed' || text === 'video' || text.startsWith('embed:') || text.startsWith('video:');
+      };
+
+
+      const getYouTubeId = (url) => {
+        try {
+          const u = new URL(url, window.location.href);
+          if (u.hostname.includes('youtu.be')) return u.pathname.replace('/', '');
+          if (!u.hostname.includes('youtube.com')) return '';
+          if (u.pathname.startsWith('/embed/')) return u.pathname.split('/')[2] || '';
+          if (u.pathname.startsWith('/shorts/')) return u.pathname.split('/')[2] || '';
+          return u.searchParams.get('v') || '';
+        } catch { return ''; }
+      };
+
+      const getBilibiliId = (url) => {
+        try {
+          const u = new URL(url, window.location.href);
+          if (!u.hostname.includes('bilibili.com')) return null;
+          const bvid = u.searchParams.get('bvid');
+          if (bvid && /^BV[0-9A-Za-z]+$/.test(bvid)) return { bvid };
+          const match = u.pathname.match(/\/video\/(BV[0-9A-Za-z]+|av\d+)/i);
+          if (!match) return null;
+          if (match[1].toLowerCase().startsWith('bv')) return { bvid: match[1] };
+          return { aid: match[1].replace(/^av/i, '') };
+        } catch { return null; }
+      };
+
+      const buildEmbed = (url) => {
+        const ytId = getYouTubeId(url);
+        if (ytId) {
+          return `<iframe src="https://www.youtube.com/embed/${ytId}" title="YouTube video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy"></iframe>`;
+        }
+        const bilibili = getBilibiliId(url);
+        if (bilibili?.bvid) {
+          return `<iframe src="https://player.bilibili.com/player.html?bvid=${bilibili.bvid}&page=1&high_quality=1" title="Bilibili video" allowfullscreen loading="lazy"></iframe>`;
+        }
+        if (bilibili?.aid) {
+          return `<iframe src="https://player.bilibili.com/player.html?aid=${bilibili.aid}&page=1&high_quality=1" title="Bilibili video" allowfullscreen loading="lazy"></iframe>`;
+        }
+        if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(url)) {
+          return `<video src="${url}" controls preload="metadata"></video>`;
+        }
+        return '';
+      };
+
+      root.querySelectorAll('a').forEach((a) => {
+        if (!isStandaloneLink(a)) return;
+        if (!isMarkedEmbed(a)) return;
+        const href = a.getAttribute('href') || '';
+        const embed = buildEmbed(href);
+        if (!embed) return;
+        const wrapper = document.createElement('div');
+        wrapper.className = 'video-embed';
+        wrapper.innerHTML = embed;
+        a.parentElement?.replaceWith(wrapper);
       });
     })();
   </script>
@@ -122,6 +211,12 @@ const relatedPosts = allPosts
   .prose :global(pre) { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.8rem; }
   .prose :global(code) { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
   .prose :global(img) { width: 100%; max-width: 100%; border-radius: 12px; border: 1px solid var(--border); margin: 1rem 0; display: block; }
+  .prose :global(iframe) { width: 100%; max-width: 100%; border-radius: 12px; border: 1px solid var(--border); margin: 1rem 0; display: block; }
+  .prose :global(video) { width: 100%; max-width: 100%; border-radius: 12px; border: 1px solid var(--border); margin: 1rem 0; display: block; background: #000; }
+  .prose :global(.video-embed) { position: relative; width: 100%; aspect-ratio: 16 / 9; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 1rem 0; }
+  .prose :global(.video-embed iframe),
+  .prose :global(.video-embed video),
+  .prose :global(.video-embed embed) { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; margin: 0; }
   .prose :global(figure) { margin: 1rem 0; }
   .prose :global(figcaption) { color: var(--text-muted); font-size: 0.85rem; text-align: center; margin-top: .4rem; }
 
