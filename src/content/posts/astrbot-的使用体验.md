@@ -21,5 +21,13 @@ cover: "/AngelaPage/images/QQ20260313-234801.png"
 
 ## like this
 
-
 ![图片描述](https://xiaorui2233.github.io/AngelaPage/images/QQ20260313-234801.png)
+
+问题:
+吃token有点猛
+原本买了10元的deepseek api都没怎么用 
+两个周就吃了进500万token了（还好deepseek还算便宜，其他模型一天就用完了）
+
+如图所示
+![DeepSeek API token消耗统计截图](/AngelaPage/images/Screenshot_20260315_072622.jpg)
+![DeepSeek API token消耗详情截图](/AngelaPage/images/Screenshot_20260315_072606.jpg)
